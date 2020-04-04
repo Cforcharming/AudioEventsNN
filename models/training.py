@@ -1,5 +1,4 @@
 from __future__ import absolute_import, division, print_function, unicode_literals
-import tensorflow as tf
 from dataset import mivia_db
 from dataset import mnist
 from models.mnist import Mnist
@@ -18,10 +17,7 @@ def train(info: str):
     
     prepared_data = _prepare_data(infos[0])
     model = _construct_network(infos[1])
-    
-    strategy = tf.distribute.MirroredStrategy()
-    with strategy.scope():
-        model.train(prepared_data)
+    model.train(prepared_data)
 
 
 def _prepare_data(db):
