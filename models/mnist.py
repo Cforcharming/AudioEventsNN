@@ -65,22 +65,26 @@ class Mnist(ModelGen):
     
     @tf.function
     def train_step(self, x_train_frame, y_train_label):
-        with tf.GradientTape() as tape:
-            predictions = self.model(x_train_frame)
-            loss = self.loss_object(y_train_label, predictions)
-        gradients = tape.gradient(loss, self.model.trainable_variables)
-        self.optimizer.apply_gradients(zip(gradients, self.model.trainable_variables))
-        
-        self.train_loss(loss)
-        self.train_accuracy(y_train_label, predictions)
+        strategy = tf.distribute.MirroredStrategy()
+        with strategy.scope():
+            with tf.GradientTape() as tape:
+                predictions = self.model(x_train_frame)
+                loss = self.loss_object(y_train_label, predictions)
+            gradients = tape.gradient(loss, self.model.trainable_variables)
+            self.optimizer.apply_gradients(zip(gradients, self.model.trainable_variables))
+            
+            self.train_loss(loss)
+            self.train_accuracy(y_train_label, predictions)
     
     @tf.function
     def test_step(self, x_test_frame, y_test_label):
-        predictions = self.model(x_test_frame)
-        t_loss = self.loss_object(x_test_frame, predictions)
-        
-        self.test_loss(t_loss)
-        self.test_accuracy(y_test_label, predictions)
+        strategy = tf.distribute.MirroredStrategy()
+        with strategy.scope():
+            predictions = self.model(x_test_frame)
+            t_loss = self.loss_object(x_test_frame, predictions)
+            
+            self.test_loss(t_loss)
+            self.test_accuracy(y_test_label, predictions)
 
 
 class MNISTModel(tf.keras.Model):
