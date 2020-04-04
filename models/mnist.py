@@ -48,7 +48,18 @@ class Mnist(ModelGen):
     
                 test_loss(t_loss)
                 test_accuracy(ytl, predictions)
-            
+
+            @tf.function
+            def distributed_train_step(dataset_inputs):
+                per_replica_losses = strategy.experimental_run_v2(train_step,
+                                                                  args=(dataset_inputs,))
+                return strategy.reduce(tf.distribute.ReduceOp.SUM, per_replica_losses,
+                                       axis=None)
+
+            @tf.function
+            def distributed_test_step(dataset_inputs):
+                return strategy.experimental_run_v2(test_step, args=(dataset_inputs,))
+
             epochs = 5
             for epoch in range(epochs):
                 
@@ -60,11 +71,11 @@ class Mnist(ModelGen):
                 
                 logger.info('Start training epoch %d' % (epoch + 1))
                 for (x_train_frame, y_train_label) in zip(x_train, y_train):
-                    train_step(x_train_frame, y_train_label)
+                    distributed_train_step(x_train_frame, y_train_label)
                 
                 logger.info('Start testing epoch %d' % (epoch + 1))
                 for (x_test_frame, y_test_label) in zip(x_test, y_test):
-                    test_step(x_test_frame, y_test_label)
+                    distributed_test_step(x_test_frame, y_test_label)
                 
                 end = time.time()
                 template = 'Epoch {}, Loss: {}, Accuracy: {}, Test Loss: {}, Test Accuracy: {}, Take time: {} seconds.'
