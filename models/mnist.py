@@ -50,15 +50,15 @@ class Mnist(ModelGen):
                 test_accuracy(ytl, predictions)
 
             @tf.function
-            def distributed_train_step(dataset_inputs):
+            def distributed_train_step(xtf, ytl):
                 per_replica_losses = strategy.experimental_run_v2(train_step,
-                                                                  args=(dataset_inputs,))
+                                                                  args=(xtf, ytl,))
                 return strategy.reduce(tf.distribute.ReduceOp.SUM, per_replica_losses,
                                        axis=None)
 
             @tf.function
-            def distributed_test_step(dataset_inputs):
-                return strategy.experimental_run_v2(test_step, args=(dataset_inputs,))
+            def distributed_test_step(xtf, ytl):
+                return strategy.experimental_run_v2(test_step, args=(xtf, ytl,))
 
             epochs = 5
             for epoch in range(epochs):
