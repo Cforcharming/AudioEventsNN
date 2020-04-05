@@ -1,6 +1,5 @@
 from models import training
 
-
 def main():
     
     # while True:
@@ -10,7 +9,8 @@ def main():
     #
     #     training.train(info)
     training.train('mnist mnist')
-
+    # dataset.mnist.load_data()
+    
 
 if __name__ == "__main__":
     main()
