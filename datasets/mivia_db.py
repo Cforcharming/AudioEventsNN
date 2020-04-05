@@ -16,14 +16,15 @@ def load_data(db_level=None):
     """
     (x_train_waves, y_train_names), (x_test_waves, y_test_names), (x_train_lens, x_test_lens) = _gets(db_level)
     
-    def _x_train_gen():
+    def _train_gen():
         """
         Generator of x_train dataset, yields a single STFT format 19x513 tf.Tensor.
         """
-        for wave in x_train_waves:
-            temp_set = _get_stfts_from_wave(wave)
-            for i in temp_set:
-                yield i
+        for (wave, name, length) in zip(x_train_waves, y_train_names, x_train_lens):
+            temp_set1 = _get_stfts_from_wave(wave)
+            temp_set2 = _get_labels_from_file(name, length)
+            for (i, j) in zip(temp_set1, temp_set2):
+                yield [i.numpy(), j.numpy()]
         
     def _y_train_gen():
         """
@@ -34,14 +35,15 @@ def load_data(db_level=None):
             for i in temp_set:
                 yield i
     
-    def _x_test_gen():
+    def _test_gen():
         """
         Generator of x_test dataset, yields a single STFT format 19x513 tf.Tensor.
         """
-        for wave in x_test_waves:
-            temp_set = _get_stfts_from_wave(wave)
-            for i in temp_set:
-                yield i
+        for (wave, name, length) in zip(x_test_waves, y_test_names, x_test_lens):
+            temp_set1 = _get_stfts_from_wave(wave)
+            temp_set2 = _get_labels_from_file(name, length)
+            for (i, j) in zip(temp_set1, temp_set2):
+                yield tuple([i.numpy(), j.numpy()])
     
     def _y_test_gen():
         """
@@ -52,16 +54,16 @@ def load_data(db_level=None):
             for i in temp_set:
                 yield i
     
-    x_train = tf.data.Dataset.from_generator(_x_train_gen, output_types=tf.complex64)\
+    train = tf.data.Dataset.from_generator(_train_gen, output_types=tf.complex64)\
         .prefetch(tf.data.experimental.AUTOTUNE)
-    y_train = tf.data.Dataset.from_generator(_y_train_gen, output_types=tf.complex64)\
+    # y_train = tf.data.Dataset.from_generator(_y_train_gen, output_types=tf.complex64)\
+    #     .prefetch(tf.data.experimental.AUTOTUNE)
+    test = tf.data.Dataset.from_generator(_test_gen, output_types=tf.complex64)\
         .prefetch(tf.data.experimental.AUTOTUNE)
-    x_test = tf.data.Dataset.from_generator(_x_test_gen, output_types=tf.complex64)\
-        .prefetch(tf.data.experimental.AUTOTUNE)
-    y_test = tf.data.Dataset.from_generator(_y_test_gen, output_types=tf.complex64)\
-        .prefetch(tf.data.experimental.AUTOTUNE)
-    
-    return (x_train, y_train), (x_test, y_test)
+    # y_test = tf.data.Dataset.from_generator(_y_test_gen, output_types=tf.complex64)\
+    #     .prefetch(tf.data.experimental.AUTOTUNE)
+    #
+    return train, test
 
 
 def _gets(db_level=None):
@@ -96,7 +98,7 @@ def _gets(db_level=None):
 
     x_train_waves, y_train_names, x_test_waves, y_test_names, x_train_lens, x_test_lens = [], [], [], [], [], []
     for db_path in db_paths:
-        for i in range(1, 67):  # training set contains 66 files
+        for i in range(1, 2):  # training set contains 66 files
             ind_audio_path = '%s%02d%s' % (gen_audio_paths[0], i, db_path)
             ind_xml_path = '%s%02d.xml' % (gen_xml_paths[0], i)
             fs, wave = wavfile.read(ind_audio_path)
@@ -104,7 +106,7 @@ def _gets(db_level=None):
             x_train_lens.append(len(wave))
             y_train_names.append(ind_xml_path)
         
-        for i in range(1, 30):  # testing set contains 29 files
+        for i in range(1, 2):  # testing set contains 29 files
             ind_audio_path = '%s%02d%s' % (gen_audio_paths[1], i, db_path)
             ind_xml_path = '%s%02d.xml' % (gen_xml_paths[1], i)
             fs, wave = wavfile.read(ind_audio_path)
@@ -150,11 +152,11 @@ def _get_labels_from_file(file_path, x_lens):
     start_frame = (np.array(start) * 3.125).astype('int')
     end_frame = (np.array(end) * 3.125).astype('int')
     frame_len = x_lens // 10240
-    y = np.ones([frame_len, 1])
+    y = np.zeros([frame_len, 1, 4])
     
     for i in range(len(classes)):
         for j in range(start_frame[i], end_frame[i]+1):
-            y[j] = classes[i]
+            y[j][classes[i]] = 1
     
     temp_set = tf.data.Dataset.from_tensor_slices(y)
     return temp_set.prefetch(tf.data.experimental.AUTOTUNE)

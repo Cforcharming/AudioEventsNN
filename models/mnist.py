@@ -26,15 +26,15 @@ class MnistModel(tf.keras.Sequential):
 
     @property
     def loss_obj(self):
-        return tf.keras.losses.SparseCategoricalCrossentropy()
+        return 'keras.losses.SparseCategoricalCrossentropy'
     
     @property
     def optimizer_obj(self):
-        return tf.keras.optimizers.Adam()
+        return 'keras.optimizers.Adam'
 
     @property
     def metrics_obj(self):
-        return [tf.keras.metrics.SparseCategoricalAccuracy(), tf.keras.metrics.AUC()]
+        return ['keras.metrics.SparseCategoricalAccuracy', 'keras.metrics.AUC']
     
     @property
     def cbs(self):

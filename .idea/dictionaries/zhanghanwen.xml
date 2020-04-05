@@ -2,6 +2,7 @@
   <dictionary name="zhanghanwen">
     <words>
       <w>asctime</w>
+      <w>autotune</w>
       <w>conv</w>
       <w>crossentropy</w>
       <w>endsecond</w>
