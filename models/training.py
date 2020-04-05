@@ -3,7 +3,7 @@ from dataset import mivia_db
 from dataset import mnist
 import tensorflow as tf
 from models.mnist import MnistModel
-from models.cnn import CnnModel
+# from models.cnn import CnnModel
 import logging
 
 
@@ -71,8 +71,12 @@ def _prepare_data(db):
 def _construct_network(net):
     
     if net == 'cnn':
-        return CnnModel()
+        # return CnnModel()
+        # TODO
+        return None
     elif net == 'mnist':
         return MnistModel()
     else:
-        return CnnModel()
+        # return CnnModel()
+        # TODO
+        return None
