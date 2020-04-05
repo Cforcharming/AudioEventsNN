@@ -3,7 +3,7 @@ from dataset import mivia_db
 from dataset import mnist
 import tensorflow as tf
 from models.mnist import MnistModel
-from models.cnn import CNN
+from models.cnn import CnnModel
 import logging
 
 
@@ -17,6 +17,20 @@ def train(info: str):
     logger.info('Preparing dataset %s and constructing model %s...' % (infos[0], infos[1]))
     
     (x_train, y_train), (x_test, y_test) = _prepare_data(infos[0])
+    
+    tf.config.set_soft_device_placement(True)
+    gpus = tf.config.experimental.list_physical_devices('GPU')
+    if gpus:
+        try:
+            # Currently, memory growth needs to be the same across GPUs
+            for gpu in gpus:
+                tf.config.experimental.set_memory_growth(gpu, True)
+            logical_gpus = tf.config.experimental.list_logical_devices('GPU')
+            print(len(gpus), "Physical GPUs,", len(logical_gpus), "Logical GPUs")
+        except RuntimeError as e:
+            # Memory growth must be set before GPUs have been initialized
+            print(e)
+    
     strategy = tf.distribute.MirroredStrategy()
     with strategy.scope():
         
@@ -26,21 +40,6 @@ def train(info: str):
             loss=model.loss_obj,
             metrics=model.metrics_obj
         )
-        # cp_callback = tf.keras.callbacks.ModelCheckpoint(
-        #     filepath='../saved_params/mnist/checkpoints',
-        #     save_best_only=True,
-        #     verbose=1,
-        #     save_weights_only=True
-        # )
-        #
-        # tb_callback = tf.keras.callbacks.TensorBoard(log_dir='../saved_params/mnist/tensorboard')
-        #
-        # callbacks = [cp_callback, tb_callback]
-        # model.compile(
-        #     optimizer=tf.keras.optimizers.Adam(),
-        #     loss=tf.keras.losses.SparseCategoricalCrossentropy(),
-        #     metrics=[tf.keras.metrics.SparseCategoricalAccuracy(), tf.keras.metrics.AUC()]
-        # )
 
         model.fit(
             x=x_train,
@@ -56,7 +55,7 @@ def train(info: str):
             y=y_test,
             verbose=1
         )
-        model.save('../saved_params/mnist/models/mnist.h5')
+        model.save('../saved_params/%s/models/mnist.h5' % infos[1])
 
 
 def _prepare_data(db):
@@ -72,8 +71,8 @@ def _prepare_data(db):
 def _construct_network(net):
     
     if net == 'cnn':
-        return CNN()
+        return CnnModel()
     elif net == 'mnist':
         return MnistModel()
     else:
-        return CNN()
+        return CnnModel()

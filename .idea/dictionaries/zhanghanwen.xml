@@ -5,6 +5,7 @@
       <w>conv</w>
       <w>crossentropy</w>
       <w>endsecond</w>
+      <w>gpus</w>
       <w>keras</w>
       <w>levelname</w>
       <w>mivia</w>

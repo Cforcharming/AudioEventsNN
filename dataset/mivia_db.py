@@ -7,7 +7,7 @@ import numpy as np
 def load_data(db_level=None):
     """
     This module loads data from MIVIA dataset. For example:
-        (x_train, y_train), (x_test, y_test) = mivia_db.load()
+        (x_train, y_train), (x_test, y_test) = mivia_db.load_data()
         
     :return x_train: tf.data.Dataset Training set, contains STFT format 19x513 tf.Tensor.
     :return y_train: tf.data.Dataset Training label, contains 1x1 label tf.Tensor.
@@ -55,7 +55,7 @@ def load_data(db_level=None):
     x_train = tf.data.Dataset.from_generator(_x_train_gen, output_types=tf.complex64)\
         .prefetch(tf.data.experimental.AUTOTUNE)
     y_train = tf.data.Dataset.from_generator(_y_train_gen, output_types=tf.complex64)\
-    .prefetch(tf.data.experimental.AUTOTUNE)
+        .prefetch(tf.data.experimental.AUTOTUNE)
     x_test = tf.data.Dataset.from_generator(_x_test_gen, output_types=tf.complex64)\
         .prefetch(tf.data.experimental.AUTOTUNE)
     y_test = tf.data.Dataset.from_generator(_y_test_gen, output_types=tf.complex64)\
