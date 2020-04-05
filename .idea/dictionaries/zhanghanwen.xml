@@ -5,6 +5,7 @@
       <w>conv</w>
       <w>crossentropy</w>
       <w>endsecond</w>
+      <w>keras</w>
       <w>levelname</w>
       <w>mivia</w>
       <w>mnist</w>
@@ -14,6 +15,7 @@
       <w>startsecond</w>
       <w>stft</w>
       <w>stfts</w>
+      <w>tensorboard</w>
       <w>wavfile</w>
       <w>zhanghanwen</w>
     </words>
