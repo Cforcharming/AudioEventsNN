@@ -2,11 +2,8 @@ from __future__ import absolute_import, division, print_function, unicode_litera
 from datasets import mivia_db, mnist_db
 from models import cnn, mnist
 import tensorflow as tf
-import numpy as np
 import logging
-import os
-
-os.environ['KMP_DUPLICATE_LIB_OK'] = 'True'
+import time
 
 
 def _prepare_data(db):
@@ -27,7 +24,7 @@ def _construct_network(net):
         return cnn.CnnModel()
 
 
-def train():
+def perform_train():
     
     fmt = '%(levelname)s %(asctime)s Line %(lineno)s (LOGGER): %(message)s'
     logging.basicConfig(level=logging.INFO, format=fmt)
@@ -36,7 +33,7 @@ def train():
     info = input('Use database, model and training epochs (split by ' '):').split(' ')
     logger.info('Preparing dataset %s and constructing model %s...' % (info[0], info[1]))
     
-    (x_train, y_train), (x_test, y_test) = _prepare_data(info[0])
+    train, test = _prepare_data(info[0])
     
     tf.config.set_soft_device_placement(True)
     gpus = tf.config.experimental.list_physical_devices('GPU')
@@ -56,22 +53,23 @@ def train():
             loss=model.loss_obj,
             metrics=model.metrics_obj
         )
+        tf.keras.backend.set_learning_phase(1)
         model.fit(
-            x=x_train,
-            y=y_train,
+            x=train,
             epochs=int(info[2]),
             verbose=1,
+            validation_split=0.2,
             shuffle=True,
             callbacks=model.cbs
         )
-        score = model.evaluate(
-            x=x_test,
-            y=y_test,
+        tf.keras.backend.set_learning_phase(0)
+        loss, acc = model.evaluate(
+            x=test,
             verbose=1
         )
-        logger.info(score)
-        model.save('saved_params/%s/models.h5' % info[1])
+        logger.info("Model accuracy: {:5.2f}%".format(100 * acc))
+        model.save('saved_params/%s/cnn-%d.hdf5' % (info[1], int(time.time())))
     
 
 if __name__ == '__main__':
-    main()
+    perform_train()
