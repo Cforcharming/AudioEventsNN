@@ -5,6 +5,7 @@
       <w>autotune</w>
       <w>conv</w>
       <w>crossentropy</w>
+      <w>datasets</w>
       <w>endsecond</w>
       <w>gpus</w>
       <w>keras</w>
@@ -14,10 +15,12 @@
       <w>ndarray</w>
       <w>relu</w>
       <w>softmax</w>
+      <w>spectrograms</w>
       <w>startsecond</w>
       <w>stft</w>
       <w>stfts</w>
       <w>tensorboard</w>
+      <w>tensorflow</w>
       <w>wavfile</w>
       <w>zhanghanwen</w>
     </words>

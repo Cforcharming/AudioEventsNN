@@ -4,66 +4,58 @@ import tensorflow as tf
 import numpy as np
 
 
-def load_data(db_level=None):
+def load_data(db_level=None, one_hot=False):
     """
     This module loads data from MIVIA dataset. For example:
-        (x_train, y_train), (x_test, y_test) = mivia_db.load_data()
+        train, test = mivia_db.load_data()
         
-    :return x_train: tf.data.Dataset Training set, contains STFT format 19x513 tf.Tensor.
-    :return y_train: tf.data.Dataset Training label, contains 1x1 label tf.Tensor.
-    :return x_test: tf.data.Dataset Testing set, contains STFT format 19x513 tf.Tensor.
-    :return y_test: tf.data.Dataset Testing label, contains 1x1 label tf.Tensor.
+    :return train: yields (x_train, y_train), where x_train is 128x128
+    :return train: yields (x_test, y_test), where x_train is 128x128
     """
     (x_train_waves, y_train_names), (x_test_waves, y_test_names), (x_train_lens, x_test_lens) = _gets(db_level)
     
-    def _train_gen():
+    def _x_train_gen():
         """
         Generator of x_train dataset, yields a single STFT format 19x513 tf.Tensor.
         """
         for (wave, name, length) in zip(x_train_waves, y_train_names, x_train_lens):
-            temp_set1 = _get_stfts_from_wave(wave)
-            temp_set2 = _get_labels_from_file(name, length)
-            for (i, j) in zip(temp_set1, temp_set2):
-                yield [i.numpy(), j.numpy()]
-        
+            temp_set = _get_mel_logs_from_wave(wave)
+            for i in temp_set:
+                yield i
+
     def _y_train_gen():
         """
         Generator of y_train dataset, yields a single 1x1 label tf.Tensor.
         """
         for (name, length) in zip(y_train_names, x_train_lens):
-            temp_set = _get_labels_from_file(name, length)
+            temp_set = _get_labels_from_file(name, length, one_hot)
             for i in temp_set:
                 yield i
-    
-    def _test_gen():
+
+    def _x_test_gen():
         """
         Generator of x_test dataset, yields a single STFT format 19x513 tf.Tensor.
         """
-        for (wave, name, length) in zip(x_test_waves, y_test_names, x_test_lens):
-            temp_set1 = _get_stfts_from_wave(wave)
-            temp_set2 = _get_labels_from_file(name, length)
-            for (i, j) in zip(temp_set1, temp_set2):
-                yield tuple([i.numpy(), j.numpy()])
-    
+        for wave in x_test_waves:
+            temp_set = _get_mel_logs_from_wave(wave)
+            for i in temp_set:
+                yield i
+
     def _y_test_gen():
         """
         Generator of y_test dataset, yields a single 1x1 label tf.Tensor.
         """
         for (name, length) in zip(y_test_names, x_test_lens):
-            temp_set = _get_labels_from_file(name, length)
+            temp_set = _get_labels_from_file(name, length, one_hot)
             for i in temp_set:
                 yield i
-    
-    train = tf.data.Dataset.from_generator(_train_gen, output_types=tf.complex64)\
-        .prefetch(tf.data.experimental.AUTOTUNE)
-    # y_train = tf.data.Dataset.from_generator(_y_train_gen, output_types=tf.complex64)\
-    #     .prefetch(tf.data.experimental.AUTOTUNE)
-    test = tf.data.Dataset.from_generator(_test_gen, output_types=tf.complex64)\
-        .prefetch(tf.data.experimental.AUTOTUNE)
-    # y_test = tf.data.Dataset.from_generator(_y_test_gen, output_types=tf.complex64)\
-    #     .prefetch(tf.data.experimental.AUTOTUNE)
-    #
-    return train, test
+
+    x_train = tf.data.Dataset.from_generator(_x_train_gen, output_types=tf.float32).prefetch(-1)
+    y_train = tf.data.Dataset.from_generator(_y_train_gen, output_types=tf.float32).prefetch(-1)
+    x_test = tf.data.Dataset.from_generator(_x_test_gen, output_types=tf.float32).prefetch(-1)
+    y_test = tf.data.Dataset.from_generator(_y_test_gen, output_types=tf.float32).prefetch(-1)
+
+    return tf.data.Dataset.zip((x_train, y_train)), tf.data.Dataset.zip((x_test, y_test))
 
 
 def _gets(db_level=None):
@@ -117,46 +109,84 @@ def _gets(db_level=None):
     return (x_train_waves, y_train_names), (x_test_waves, y_test_names), (x_train_lens, x_test_lens)
 
 
-def _get_stfts_from_wave(wave):
+def _get_mel_logs_from_wave(wave):
     """
     Convert a wave from int16 to -1.~+1. float32,
-    split it into 10240 points(320ms) slices,
-    then transform the slice by STFT, with FFT length 1024(32ms), 50% overlap.
+    split it into 16384 points(512ms) slices,
+    then transform the slice by STFT, with FFT length 256(8ms), 50% overlap.
     Generate a sub dataset from a single file
-    :param wave: np.ndarray The wave of the audio of one .wav file.
-    :return temp_set: tf.data.Dataset The dataset of the STFT slices(19x513) of this particular wave.
+    Args:
+        wave: 'np.array` The wave of the audio of one .wav file.
+    Returns:
+         temp_set: `tf.data.Dataset` The dataset of the STFT slices(19x513) of this particular wave.
     """
-    stfts = tf.signal.stft(wave.astype('float32')/32768., frame_length=1024, frame_step=512, pad_end=True)
-    temp_set = tf.data.Dataset.from_tensor_slices(stfts).batch(19, drop_remainder=True)
-    return temp_set.prefetch(tf.data.experimental.AUTOTUNE)
+    stfts = tf.signal.stft(
+        wave.astype('float32') / 32768.,
+        frame_length=256,
+        frame_step=128,
+        pad_end=True
+    )
+    spectrograms = tf.abs(stfts)
+    linear_to_mel_weight_matrix = tf.signal.linear_to_mel_weight_matrix(
+        num_mel_bins=128,
+        num_spectrogram_bins=129,
+        sample_rate=32000,
+        lower_edge_hertz=80.,
+        upper_edge_hertz=7600.
+    )
+    mel_spectrograms = tf.tensordot(spectrograms, linear_to_mel_weight_matrix, 1)
+    log_mel_spectrograms = tf.math.log(mel_spectrograms + 1e-6)
+    temp_set = tf.data.Dataset.from_tensor_slices(log_mel_spectrograms).batch(128, drop_remainder=True)
+    return temp_set.prefetch(-1)
 
 
-def _get_labels_from_file(file_path, x_lens):
+def _get_labels_from_file(file_path, x_lens, one_hot):
     """
     Generate a sub dataset from a single file.
-    :param file_path:str The file path of one .xml label file.
-    :param x_lens:int The length of the .wav file for the .xml to label
-    :return temp_set: tf.data.Dataset The dataset of 1x1 label of one particular .wav file.
+    Args:
+        file_path: `str` The file path of one .xml label file.
+        x_lens: `int` The length of the .wav file for the .xml to label
+    Returns:
+        temp_set: tf.data.Dataset The dataset of 1x1 label of one particular .wav file.
     """
     root = ET.parse(file_path).getroot()
     classes, start, end = [], [], []
     for (class_id, start_t, end_t) in zip(
             root.findall('./events/item/CLASS_ID'),
             root.findall('./events/item/STARTSECOND'),
-            root.findall('./events/item/ENDSECOND')):
+            root.findall('./events/item/ENDSECOND')
+    ):
         classes.append(float(class_id.text))
         start.append(float(start_t.text))
         end.append(float(end_t.text))
-        
-    classes = np.array(classes)
-    start_frame = (np.array(start) * 3.125).astype('int')
-    end_frame = (np.array(end) * 3.125).astype('int')
-    frame_len = x_lens // 10240
-    y = np.zeros([frame_len, 1, 4])
     
+    classes = np.array(classes, dtype='float32')
+    start_point = (np.array(start) * 32000).astype('int')
+    end_point = (np.array(end) * 32000).astype('int')
+    events = np.ones(x_lens)
     for i in range(len(classes)):
-        for j in range(start_frame[i], end_frame[i]+1):
-            y[j][classes[i]] = 1
-    
-    temp_set = tf.data.Dataset.from_tensor_slices(y)
-    return temp_set.prefetch(tf.data.experimental.AUTOTUNE)
+        for j in range(start_point[i], end_point[i] + 1):
+            events[j] = classes[i]
+    events_frame = tf.signal.frame(
+        signal=events,
+        frame_length=256,
+        frame_step=128,
+        pad_end=True,
+        pad_value=1.
+    )
+    y = tf.reduce_max(events_frame, axis=1)
+    y_frame = tf.signal.frame(
+        signal=y,
+        frame_length=128,
+        frame_step=128,
+        pad_end=False
+    )
+    y_label = tf.reduce_max(y_frame, axis=1)
+    if one_hot:
+        # TODO fix tensorflow.python.framework.errors_impl.NotFoundError: Could not find valid device for node.
+        y_label = y_label - 1
+        yl = tf.one_hot(y_label, 4, dtype=tf.float32)
+    else:
+        yl = tf.expand_dims(y_label, axis=1)
+    temp_set = tf.data.Dataset.from_tensor_slices(yl)
+    return temp_set.prefetch(-1)

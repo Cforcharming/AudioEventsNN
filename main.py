@@ -1,15 +1,19 @@
 from __future__ import absolute_import, division, print_function, unicode_literals
-from datasets import mivia_db, mnist
+from datasets import mivia_db, mnist_db
 from models import cnn, mnist
 import tensorflow as tf
+import numpy as np
 import logging
+import os
+
+os.environ['KMP_DUPLICATE_LIB_OK'] = 'True'
 
 
 def _prepare_data(db):
     if db == 'mivia':
         return mivia_db.load_data()
     elif db == 'mnist':
-        return mnist.load_data()
+        return mnist_db.load_data()
     else:
         return mivia_db.load_data()
 
@@ -23,7 +27,7 @@ def _construct_network(net):
         return cnn.CnnModel()
 
 
-if __name__ == "__main__":
+def train():
     
     fmt = '%(levelname)s %(asctime)s Line %(lineno)s (LOGGER): %(message)s'
     logging.basicConfig(level=logging.INFO, format=fmt)
@@ -60,9 +64,14 @@ if __name__ == "__main__":
             shuffle=True,
             callbacks=model.cbs
         )
-        model.evaluate(
+        score = model.evaluate(
             x=x_test,
             y=y_test,
             verbose=1
         )
-        model.save('../saved_params/%s/models/mnist.h5' % info[1])
+        logger.info(score)
+        model.save('saved_params/%s/models.h5' % info[1])
+    
+
+if __name__ == '__main__':
+    main()
