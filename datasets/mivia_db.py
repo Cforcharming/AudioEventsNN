@@ -12,68 +12,6 @@ def load_data(db_level=None, one_hot=False):
     :return train: yields (x_train, y_train), where x_train is 128x128
     :return train: yields (x_test, y_test), where x_train is 128x128
     """
-#     (x_train_waves, y_train_names), (x_test_waves, y_test_names), (x_train_lens, x_test_lens) = _gets(db_level)
-#
-#     # def _x_train_gen():
-#     #     """
-#     #     Generator of x_train dataset, yields a single STFT format 128x128 tf.Tensor.
-#     #     """
-#     #     for wave in x_train_waves:
-#     #         temp_set = _get_mel_logs_from_wave(wave)
-#     #         for i in temp_set:
-#     #             yield i
-#
-#     def _y_train_gen():
-#         """
-#         Generator of y_test dataset, yields a single 1x1 label tf.Tensor.
-#         """
-#         for (wave, name, length) in zip(x_train_waves, y_train_names, x_train_lens):
-#             temp_set1 = _get_mel_logs_from_wave(wave)
-#             temp_set2 = _get_labels_from_file(name, length, one_hot)
-#             for (i, j) in zip(temp_set1, temp_set2):
-#                 print('in train gen', i.shape, j.shape)
-#                 yield np.array(i), j
-#
-#     # def _x_test_gen():
-#     #     """
-#     #     Generator of x_test dataset, yields a single STFT format 128x128 tf.Tensor.
-#     #     """
-#     #     for wave in x_test_waves:
-#     #         temp_set = _get_mel_logs_from_wave(wave)
-#     #         for i in temp_set:
-#     #             yield i
-#
-#     def _y_test_gen():
-#         """
-#         Generator of y_test dataset, yields a single 1x1 label tf.Tensor.
-#         """
-#         for (wave, name, length) in zip(x_test_waves, y_test_names, x_test_lens):
-#             temp_set1 = _get_mel_logs_from_wave(wave)
-#             temp_set2 = _get_labels_from_file(name, length, one_hot)
-#             for (i, j) in zip(temp_set1, temp_set2):
-#                 print('in test gen', i.shape, j.shape)
-#                 yield np.array(i), j
-#
-#     # x_train = tf.data.Dataset.from_generator(_x_train_gen, output_types=tf.float32)
-#     y_train = tf.data.Dataset.from_generator(_y_train_gen, output_types=tf.float32)
-#     # x_test = tf.data.Dataset.from_generator(_x_test_gen, output_types=tf.float32)
-#     y_test = tf.data.Dataset.from_generator(_y_test_gen, output_types=tf.float32)
-#     return y_train, y_test
-#     return tf.data.Dataset.from_tensor_slices((x_train, y_train)), tf.data.Dataset.from_tensor_slices((x_test,y_test))
-#
-#
-# def _gets(db_level=None):
-    """
-    Generate file paths for .wav and .xml files from the dataset.
-    Then get the wave data and its length from the generated .wav file.
-    
-    :return x_train_waves: list<np.ndarray> List of training set waves of .wav files.
-    :return y_train_names: list<str> List of training set .xml label files.
-    :return x_test_waves: list<np.ndarray> List of testing set waves.
-    :return y_test_names: list<str> List of testing set .xml label files.
-    :return x_train_lens: list<int> List of lengths of waves in x_train_waves.
-    :return x_test_lens: list<int> List of lengths of waves in x_test_waves.
-    """
     gen_audio_paths = ('data/MIVIA_DB/training/sounds/000', 'data/MIVIA_DB/testing/sounds/000')
     gen_xml_paths = ('data/MIVIA_DB/training/000', 'data/MIVIA_DB/testing/000')
     
@@ -93,7 +31,8 @@ def load_data(db_level=None, one_hot=False):
         db_paths = [db_paths[5]]
     
     # x_train_waves, y_train_names, x_test_waves, y_test_names, x_train_lens, x_test_lens = [], [], [], [], [], []
-    
+
+    # noinspection DuplicatedCode
     def _train_gen():
         for db_path in db_paths:
             for i in range(1, 3):  # training set contains 66 files
@@ -103,8 +42,9 @@ def load_data(db_level=None, one_hot=False):
                 log_mels = _get_mel_logs_from_wave(wave)
                 labels = _get_labels_from_file(ind_xml_path, len(wave), one_hot)
                 for (log_mel, label) in zip(log_mels, labels):
-                    yield tf.reshape(log_mel, [1, 128, 128]), label
-    
+                    yield tf.reshape(log_mel, [128, 128, 1]), label
+
+    # noinspection DuplicatedCode
     def _test_gen():
         for db_path in db_paths:
             for i in range(1, 3):  # testing set contains 29 files
@@ -114,16 +54,16 @@ def load_data(db_level=None, one_hot=False):
                 log_mels = _get_mel_logs_from_wave(wave)
                 labels = _get_labels_from_file(ind_xml_path, len(wave), one_hot)
                 for (log_mel, label) in zip(log_mels, labels):
-                    yield tf.reshape(log_mel, [1, 128, 128]), label
+                    yield tf.reshape(log_mel, [128, 128, 1]), label
     
     # return (x_train_waves, y_train_names), (x_test_waves, y_test_names), (x_train_lens, x_test_lens)
     train_set = tf.data.Dataset.from_generator(generator=_train_gen,
                                                output_types=(tf.float32, tf.float32),
-                                               output_shapes=(tf.TensorShape((1, 128, 128)), tf.TensorShape((1, )))
+                                               output_shapes=(tf.TensorShape((128, 128, 1)), tf.TensorShape((1, )))
                                                ).batch(32)
     test_set = tf.data.Dataset.from_generator(generator=_test_gen,
                                               output_types=(tf.float32, tf.float32),
-                                              output_shapes=(tf.TensorShape((1, 128, 128)), tf.TensorShape((1, )))
+                                              output_shapes=(tf.TensorShape((128, 128, 1)), tf.TensorShape((1, )))
                                               ).batch(32)
     
     return train_set, test_set
@@ -131,14 +71,14 @@ def load_data(db_level=None, one_hot=False):
 
 def _get_mel_logs_from_wave(wave):
     """
-    Convert a wave from int16 to -1.~+1. float32,\]
+    Convert a wave from int16 to -1.~+1. float32
     split it into 16384 points(512ms) slices,
     then transform the slice by STFT, with FFT length 256(8ms), 50% overlap.
     Generate a sub dataset from a single file
     Args:
         wave: 'np.array` The wave of the audio of one .wav file.
     Returns:
-         temp_set: `tf.data.Dataset` The dataset of the STFT slices(19x513) of this particular wave.
+         log_mel: `tf.Tensor` The tensor containing overlapped log-mel spectrum of shape (16384,)
     """
     stfts = tf.signal.stft(
         wave.astype('float32') / 32768.,
@@ -172,7 +112,7 @@ def _get_labels_from_file(file_path, x_lens, one_hot):
         file_path: `str` The file path of one .xml label file.
         x_lens: `int` The length of the .wav file for the .xml to label
     Returns:
-        temp_set: tf.data.Dataset The dataset of 1x1 label of one particular .wav file.
+        yl: `tf.Tensor' the label, whether one hot coded, for the log-mel
     """
     root = ET.parse(file_path).getroot()
     classes, start, end = [], [], []
@@ -181,7 +121,7 @@ def _get_labels_from_file(file_path, x_lens, one_hot):
             root.findall('./events/item/STARTSECOND'),
             root.findall('./events/item/ENDSECOND')
     ):
-        classes.append(float(class_id.text))
+        classes.append(float(class_id.text)-1.)
         start.append(float(start_t.text))
         end.append(float(end_t.text))
     

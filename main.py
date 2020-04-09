@@ -1,6 +1,6 @@
 from __future__ import absolute_import, division, print_function, unicode_literals
-from datasets import mivia_db, mnist_db
 from models import cnn, bcnn, alex_net, mnist
+from datasets import mivia_db, mnist_db
 import tensorflow as tf
 import logging
 
@@ -86,7 +86,7 @@ if __name__ == '__main__':
     fmt = '%(levelname)s %(asctime)s Line %(lineno)s (LOGGER): %(message)s'
     logging.basicConfig(level=logging.INFO, format=fmt)
     
-    infos_list = ['mivia cnn 2']
+    infos_list = ['mivia cnn 1']
     
     for infos in infos_list:
         perform_train(infos)
