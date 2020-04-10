@@ -1,6 +1,5 @@
 from __future__ import absolute_import, division, print_function, unicode_literals
 import tensorflow as tf
-import datetime
 
 
 class ModelGen(tf.keras.Sequential):
@@ -27,7 +26,7 @@ class ModelGen(tf.keras.Sequential):
     
     @property
     def metrics_obj(self):
-        return ['accuracy', 'sparse_categorical_accuracy']
+        return ['accuracy']
     
     @property
     def cbs(self):
@@ -37,7 +36,7 @@ class ModelGen(tf.keras.Sequential):
             save_weights_only=True,
         )
         tb_callback = tf.keras.callbacks.TensorBoard(
-            log_dir='saved_params/cnn/tensorboard/' + datetime.datetime.now().strftime("%Y%m%d-%H%M%S"),
+            log_dir='saved_params/cnn/tensorboard',
             histogram_freq=20,
             write_graph=True,
             update_freq=1000
@@ -45,7 +44,7 @@ class ModelGen(tf.keras.Sequential):
         es_callback = tf.keras.callbacks.EarlyStopping(
             monitor=self.loss_obj,
             min_delta=0.05,
-            patience=2,
+            patience=10,
             restore_best_weights=True
         )
         

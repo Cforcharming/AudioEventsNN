@@ -29,7 +29,6 @@ def _construct_network(net):
 
 def perform_train(ifs):
     
-    logger = logging.getLogger('AudioEventsNN')
     info = ifs.split(' ')
     logger.info('Preparing dataset %s and constructing model %s with epoch %d...' % (info[0], info[1], int(info[2])))
     
@@ -53,16 +52,23 @@ def perform_train(ifs):
             model.fit(x=train_ds,
                       epochs=int(info[2]),
                       verbose=1,
+                      validation_data=test_ds,
+                      validation_steps=None,
                       shuffle=True,
                       callbacks=model.cbs
                       )
+        except KeyboardInterrupt:
+            logger.info('Stopped by KeyboardInterrupt.')
         finally:
-            model.save('saved_params/saved_params/%s/models/%s.h5' % (info[1], info[1]))
+            logger.info('Saving model as: saved_params/%s/models/%s.h5' % (info[1], info[1]))
+            tf.keras.models.save_model(model=model,
+                                       filepath='saved_params/%s/models/%s.h5' % (info[1], info[1]),
+                                       save_format='h5'
+                                       )
 
 
 def perform_evaluate(ifs, db_level=None):
     
-    logger = logging.getLogger('AudioEventsNN')
     info = ifs.split(' ')
     logger.info('Preparing dataset %s and testing model %s' % (info[0], info[1]))
     
@@ -72,7 +78,8 @@ def perform_evaluate(ifs, db_level=None):
 
     strategy = tf.distribute.MirroredStrategy()
     with strategy.scope():
-        model = tf.keras.models.load_model('saved_params/%s/models/%s.h5' % (info[1], info[1]))
+        model = _construct_network(info[1])
+        model.load_weights('saved_params/%s/models/%s.h5' % (info[1], info[1]))
         train_ds, test_ds = _prepare_data(info[0], db_level)
         loss, acc = model.evaluate(
             x=test_ds,
@@ -88,13 +95,15 @@ if __name__ == '__main__':
     
     fmt = '%(levelname)s %(asctime)s Line %(lineno)s (LOGGER): %(message)s'
     logging.basicConfig(level=logging.INFO, format=fmt)
+    logger = logging.getLogger('AudioEventsNN')
     
-    infos_list = ['mivia cnn 1']
+    infos_list = ['mivia cnn 20']
     
     for infos in infos_list:
         perform_train(infos)
         # if infos[0] == 'mivia':
         #     for i in range(5, 31, 5):
+        #         logger.info('Evaluating performance on %ddB OF SNR' % i)
         #         perform_evaluate(infos, db_level=i)
         # else:
         #     perform_evaluate(infos)

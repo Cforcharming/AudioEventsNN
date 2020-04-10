@@ -33,27 +33,27 @@ def load_data(db_level=None, one_hot=False):
     # noinspection DuplicatedCode
     def _train_gen():
         for db_path in db_paths:
-            for i in range(1, 3):  # training set contains 66 files
+            for i in range(1, 67):  # training set contains 66 files
                 ind_audio_path = '%s%02d%s' % (gen_audio_paths[0], i, db_path)
                 ind_xml_path = '%s%02d.xml' % (gen_xml_paths[0], i)
                 fs, wave = wavfile.read(ind_audio_path)
                 log_mels = _get_mel_logs_from_wave(wave)
                 labels = _get_labels_from_file(ind_xml_path, len(wave), one_hot)
                 for (log_mel, label) in zip(log_mels, labels):
-                    if label.numpy()[0] == 0. and np.random.rand() < 0.06:
+                    if label.numpy() != 0 or np.random.rand() < 0.08:
                         yield tf.reshape(log_mel, [128, 128, 1]), label
 
     # noinspection DuplicatedCode
     def _test_gen():
         for db_path in db_paths:
-            for i in range(1, 3):  # testing set contains 29 files
+            for i in range(1, 30):  # testing set contains 29 files
                 ind_audio_path = '%s%02d%s' % (gen_audio_paths[1], i, db_path)
                 ind_xml_path = '%s%02d.xml' % (gen_xml_paths[1], i)
                 fs, wave = wavfile.read(ind_audio_path)
                 log_mels = _get_mel_logs_from_wave(wave)
                 labels = _get_labels_from_file(ind_xml_path, len(wave), one_hot)
                 for (log_mel, label) in zip(log_mels, labels):
-                    if label.numpy()[0] == 0. and np.random.rand() < 0.06:
+                    if label.numpy() != 0 or np.random.rand() < 0.08:
                         yield tf.reshape(log_mel, [128, 128, 1]), label
                     
     train_set = tf.data.Dataset.from_generator(generator=_train_gen,
@@ -127,7 +127,7 @@ def _get_labels_from_file(file_path, x_lens, one_hot):
     classes = np.array(classes, dtype='float32')
     start_point = (np.array(start) * 32000).astype('int')
     end_point = (np.array(end) * 32000).astype('int')
-    events = np.ones(x_lens)
+    events = np.zeros(x_lens)
     for i in range(len(classes)):
         for j in range(start_point[i], end_point[i] + 1):
             events[j] = classes[i]
@@ -147,8 +147,8 @@ def _get_labels_from_file(file_path, x_lens, one_hot):
     )
     y_label = tf.reduce_max(y_frame, axis=1)
     if one_hot:
-        # TODO fix tensorflow.python.framework.errors_impl.NotFoundError: Could not find valid device for node.
-        yl = tf.one_hot(y_label.numpy().astype('int')-1, 4)
+        # yl = tf.one_hot(y_label.numpy().astype('int')-1, 4)
+        raise NotImplementedError('labels for one-hot coding is not implemented.')
     else:
         yl = tf.expand_dims(y_label, axis=1)
     return yl
