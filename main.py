@@ -59,11 +59,14 @@ def perform_train(ifs):
                       )
         except KeyboardInterrupt:
             logger.info('Stopped by KeyboardInterrupt.')
+        except Exception as e:
+            logger.error(e)
         finally:
             logger.info('Saving model as: saved_params/%s/models/%s.h5' % (info[1], info[1]))
             model.save_weights(filepath='saved_params/%s/models/%s.h5' % (info[1], info[1]),
                                save_format='h5'
                                )
+            logger.info('Done training.')
 
 
 def perform_evaluate(ifs, db_level=None):

@@ -77,7 +77,7 @@ class CnnModel(ModelGen):
             update_freq='batch'
         )
         es_callback = tf.keras.callbacks.EarlyStopping(
-            monitor=self.metrics_obj,
+            monitor=self.metrics_obj[0],
             min_delta=0.05,
             patience=10,
             restore_best_weights=True
