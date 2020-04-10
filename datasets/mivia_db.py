@@ -59,11 +59,11 @@ def load_data(db_level=None, one_hot=False):
     train_set = tf.data.Dataset.from_generator(generator=_train_gen,
                                                output_types=(tf.float32, tf.float32),
                                                output_shapes=(tf.TensorShape((128, 128, 1)), tf.TensorShape((1, )))
-                                               ).batch(32)
+                                               ).prefetch(tf.data.experimental.AUTOTUNE).batch(32)
     test_set = tf.data.Dataset.from_generator(generator=_test_gen,
                                               output_types=(tf.float32, tf.float32),
                                               output_shapes=(tf.TensorShape((128, 128, 1)), tf.TensorShape((1, )))
-                                              ).batch(32)
+                                              ).prefetch(tf.data.experimental.AUTOTUNE).batch(32)
     
     return train_set, test_set
 

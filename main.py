@@ -32,7 +32,7 @@ def perform_train(ifs):
     info = ifs.split(' ')
     logger.info('Preparing dataset %s and constructing model %s with epoch %d...' % (info[0], info[1], int(info[2])))
     
-    tf.config.set_soft_device_placement(True)
+    # tf.config.set_soft_device_placement(True)
     gpus = tf.config.experimental.list_physical_devices('GPU')
     if gpus:
         for gpu in gpus:
@@ -52,8 +52,8 @@ def perform_train(ifs):
             model.fit(x=train_ds,
                       epochs=int(info[2]),
                       verbose=1,
-                      validation_data=test_ds,
-                      validation_steps=None,
+                      # validation_data=test_ds,
+                      # validation_steps=None,
                       shuffle=True,
                       callbacks=model.cbs
                       )
@@ -61,10 +61,9 @@ def perform_train(ifs):
             logger.info('Stopped by KeyboardInterrupt.')
         finally:
             logger.info('Saving model as: saved_params/%s/models/%s.h5' % (info[1], info[1]))
-            tf.keras.models.save_model(model=model,
-                                       filepath='saved_params/%s/models/%s.h5' % (info[1], info[1]),
-                                       save_format='h5'
-                                       )
+            model.save_weights(filepath='saved_params/%s/models/%s.h5' % (info[1], info[1]),
+                               save_format='h5'
+                               )
 
 
 def perform_evaluate(ifs, db_level=None):
@@ -81,14 +80,18 @@ def perform_evaluate(ifs, db_level=None):
         model = _construct_network(info[1])
         model.load_weights('saved_params/%s/models/%s.h5' % (info[1], info[1]))
         train_ds, test_ds = _prepare_data(info[0], db_level)
-        loss, acc = model.evaluate(
-            x=test_ds,
-            verbose=1
-        )
-        if db_level is not None:
-            logger.info("Model %s accuracy on dataset %s for SNR=%d: %5.2f" % (info[1], info[0], db_level, acc))
-        else:
-            logger.info("Model %s accuracy on dataset %s: %5.2f" % (info[1], info[0], acc))
+        try:
+            # TODO fix ValueError: Unknown Layer: CnnModel
+            loss, acc = model.evaluate(
+                x=test_ds,
+                verbose=1
+            )
+            if db_level is not None:
+                logger.info("Model %s accuracy on dataset %s for SNR=%d: %5.2f" % (info[1], info[0], db_level, acc))
+            else:
+                logger.info("Model %s accuracy on dataset %s: %5.2f" % (info[1], info[0], acc))
+        except ValueError as e:
+            logger.error(e)
 
 
 if __name__ == '__main__':
@@ -101,9 +104,9 @@ if __name__ == '__main__':
     
     for infos in infos_list:
         perform_train(infos)
-        # if infos[0] == 'mivia':
-        #     for i in range(5, 31, 5):
-        #         logger.info('Evaluating performance on %ddB OF SNR' % i)
-        #         perform_evaluate(infos, db_level=i)
-        # else:
-        #     perform_evaluate(infos)
+        if infos[0] == 'mivia':
+            for i in range(5, 31, 5):
+                logger.info('Evaluating performance on %ddB OF SNR' % i)
+                perform_evaluate(infos, db_level=i)
+        else:
+            perform_evaluate(infos)

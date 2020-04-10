@@ -7,9 +7,10 @@ class CnnModel(ModelGen):
     
     def __init__(self):
         super(CnnModel, self).__init__()
+        self.n = 'cnn'
         self.conv1 = layers.Conv2D(filters=16,
                                    kernel_size=9,
-                                   input_shape=(128, 128, 1),
+                                   input_shape=(32, 128, 128, 1),
                                    data_format='channels_last',
                                    activation='relu',
                                    name='conv1'

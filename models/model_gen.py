@@ -1,4 +1,5 @@
 from __future__ import absolute_import, division, print_function, unicode_literals
+from datetime import datetime
 import tensorflow as tf
 
 
@@ -10,6 +11,7 @@ class ModelGen(tf.keras.Sequential):
     """
     def __init__(self):
         super(ModelGen, self).__init__()
+        self.n = None
         pass  # add custom layers here
     
     def call(self, inputs, training=None, mask=None):
@@ -31,18 +33,18 @@ class ModelGen(tf.keras.Sequential):
     @property
     def cbs(self):
         cp_callback = tf.keras.callbacks.ModelCheckpoint(
-            filepath='saved_params/cnn/checkpoints/{epoch:04d}_ckpt',
+            filepath='saved_params/%s/checkpoints/{epoch:04d}_ckpt' % self.n,
             verbose=1,
             save_weights_only=True,
         )
         tb_callback = tf.keras.callbacks.TensorBoard(
-            log_dir='saved_params/cnn/tensorboard',
+            log_dir='saved_params/%s/tensorboard/' % self.n + datetime.now().strftime("%Y%m%d-%H%M%S"),
             histogram_freq=20,
             write_graph=True,
-            update_freq=1000
+            update_freq='batch'
         )
         es_callback = tf.keras.callbacks.EarlyStopping(
-            monitor=self.loss_obj,
+            monitor=self.metrics_obj,
             min_delta=0.05,
             patience=10,
             restore_best_weights=True
