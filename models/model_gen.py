@@ -1,5 +1,4 @@
 from __future__ import absolute_import, division, print_function, unicode_literals
-from datetime import datetime
 import tensorflow as tf
 
 
@@ -24,7 +23,7 @@ class ModelGen(tf.keras.Sequential):
     
     @property
     def optimizer_obj(self):
-        return 'adam'
+        return tf.keras.optimizers.Adam()
     
     @property
     def metrics_obj(self):
@@ -32,23 +31,4 @@ class ModelGen(tf.keras.Sequential):
     
     @property
     def cbs(self):
-        cp_callback = tf.keras.callbacks.ModelCheckpoint(
-            filepath='saved_params/%s/checkpoints/{epoch:04d}_ckpt' % self.n,
-            verbose=1,
-            save_weights_only=True,
-        )
-        tb_callback = tf.keras.callbacks.TensorBoard(
-            log_dir='saved_params/%s/tensorboard/' % self.n + datetime.now().strftime("%Y%m%d-%H%M%S"),
-            histogram_freq=20,
-            write_graph=True,
-            update_freq='batch'
-        )
-        es_callback = tf.keras.callbacks.EarlyStopping(
-            monitor=self.metrics_obj,
-            min_delta=0.05,
-            patience=10,
-            restore_best_weights=True
-        )
-        
-        cbs = [cp_callback, tb_callback, es_callback]
-        return cbs
+        raise NotImplementedError('cbs for module ModelGen is not implemented.')
