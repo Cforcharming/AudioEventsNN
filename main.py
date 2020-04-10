@@ -49,12 +49,15 @@ def perform_train(ifs):
                       loss=model.loss_obj,
                       metrics=model.metrics_obj
                       )
-        model.fit(x=train_ds,
-                  epochs=int(info[2]),
-                  verbose=1,
-                  shuffle=True,
-                  callbacks=model.cbs
-                  )
+        try:
+            model.fit(x=train_ds,
+                      epochs=int(info[2]),
+                      verbose=1,
+                      shuffle=True,
+                      callbacks=model.cbs
+                      )
+        finally:
+            model.save('saved_params/saved_params/%s/models/%s.h5' % (info[1], info[1]))
 
 
 def perform_evaluate(ifs, db_level=None):

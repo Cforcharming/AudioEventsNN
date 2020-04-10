@@ -29,8 +29,6 @@ def load_data(db_level=None, one_hot=False):
         db_paths = [db_paths[4]]
     elif db_level == 30:
         db_paths = [db_paths[5]]
-    
-    # x_train_waves, y_train_names, x_test_waves, y_test_names, x_train_lens, x_test_lens = [], [], [], [], [], []
 
     # noinspection DuplicatedCode
     def _train_gen():
@@ -42,7 +40,8 @@ def load_data(db_level=None, one_hot=False):
                 log_mels = _get_mel_logs_from_wave(wave)
                 labels = _get_labels_from_file(ind_xml_path, len(wave), one_hot)
                 for (log_mel, label) in zip(log_mels, labels):
-                    yield tf.reshape(log_mel, [128, 128, 1]), label
+                    if label.numpy()[0] == 0. and np.random.rand() < 0.06:
+                        yield tf.reshape(log_mel, [128, 128, 1]), label
 
     # noinspection DuplicatedCode
     def _test_gen():
@@ -54,9 +53,9 @@ def load_data(db_level=None, one_hot=False):
                 log_mels = _get_mel_logs_from_wave(wave)
                 labels = _get_labels_from_file(ind_xml_path, len(wave), one_hot)
                 for (log_mel, label) in zip(log_mels, labels):
-                    yield tf.reshape(log_mel, [128, 128, 1]), label
-    
-    # return (x_train_waves, y_train_names), (x_test_waves, y_test_names), (x_train_lens, x_test_lens)
+                    if label.numpy()[0] == 0. and np.random.rand() < 0.06:
+                        yield tf.reshape(log_mel, [128, 128, 1]), label
+                    
     train_set = tf.data.Dataset.from_generator(generator=_train_gen,
                                                output_types=(tf.float32, tf.float32),
                                                output_shapes=(tf.TensorShape((128, 128, 1)), tf.TensorShape((1, )))
