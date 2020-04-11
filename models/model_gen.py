@@ -1,4 +1,3 @@
-from __future__ import absolute_import, division, print_function, unicode_literals
 import tensorflow as tf
 
 
@@ -10,7 +9,6 @@ class ModelGen(tf.keras.Sequential):
     """
     def __init__(self):
         super(ModelGen, self).__init__()
-        self.n = None
         pass  # add custom layers here
     
     def call(self, inputs, training=None, mask=None):

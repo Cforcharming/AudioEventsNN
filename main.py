@@ -1,6 +1,5 @@
-from __future__ import absolute_import, division, print_function, unicode_literals
-from models import cnn, bcnn, alex_net, mnist
-from datasets import mivia_db, mnist_db
+from models import cnn, bcnn, inception_v3, vgg
+from datasets import mivia_db
 import tensorflow as tf
 import logging
 
@@ -8,23 +7,21 @@ import logging
 def _prepare_data(db, snr=None):
     if db == 'mivia':
         return mivia_db.load_data(db_level=snr)
-    elif db == 'mnist':
-        return mnist_db.load_data()
     else:
-        raise ValueError('Only mivia or mnist are accepted as database.')
+        raise ValueError('Only mivia is accepted as database.')
 
 
 def _construct_network(net):
     if net == 'cnn':
         return cnn.CnnModel()
-    elif net == 'mnist':
-        return mnist.MnistModel()
+    elif net == 'vgg':
+        return vgg.VggModel()
     elif net == 'bcnn':
         return bcnn.BatchedCnnModel()
-    elif net == 'alex':
-        return alex_net.AlexNetModel()
+    elif net == 'v3':
+        return inception_v3.InceptionV3Model()
     else:
-        raise ValueError('Only cnn, bcnn, alex or mnist are accepted as model.')
+        raise ValueError('Only cnn, bcnn, v3 or vgg are accepted as model.')
 
 
 def perform_train(ifs):
@@ -32,7 +29,6 @@ def perform_train(ifs):
     info = ifs.split(' ')
     logger.info('Preparing dataset %s and constructing model %s with epoch %d...' % (info[0], info[1], int(info[2])))
     
-    # tf.config.set_soft_device_placement(True)
     gpus = tf.config.experimental.list_physical_devices('GPU')
     if gpus:
         for gpu in gpus:
@@ -44,28 +40,19 @@ def perform_train(ifs):
         train_ds, test_ds = _prepare_data(info[0])
         
         model = _construct_network(info[1])
-        model.compile(optimizer=model.optimizer_obj,
-                      loss=model.loss_obj,
-                      metrics=model.metrics_obj
-                      )
+        model.compile(optimizer=model.optimizer_obj, loss=model.loss_obj, metrics=model.metrics_obj)
+        
         try:
-            model.fit(x=train_ds,
-                      epochs=int(info[2]),
-                      verbose=1,
-                      # validation_data=test_ds,
-                      # validation_steps=None,
-                      shuffle=True,
-                      callbacks=model.cbs
-                      )
+            
+            model.fit(x=train_ds, epochs=int(info[2]), verbose=1, shuffle=True, callbacks=model.cbs)
+            
         except KeyboardInterrupt:
             logger.info('Stopped by KeyboardInterrupt.')
+            
         except Exception as e:
             logger.error(e)
+            
         finally:
-            logger.info('Saving model as: saved_params/%s/models/%s.h5' % (info[1], info[1]))
-            model.save_weights(filepath='saved_params/%s/models/%s.h5' % (info[1], info[1]),
-                               save_format='h5'
-                               )
             logger.info('Done training.')
 
 
@@ -80,12 +67,16 @@ def perform_evaluate(ifs, db_level=None):
 
     strategy = tf.distribute.MirroredStrategy()
     with strategy.scope():
+        
         model = _construct_network(info[1])
-        model.compile(optimizer=model.optimizer_obj,
-                      loss=model.loss_obj,
-                      metrics=model.metrics_obj
-                      )
-        model.load_weights('saved_params/%s/models/%s.h5' % (info[1], info[1]))
+        model.compile(optimizer=model.optimizer_obj, loss=model.loss_obj, metrics=model.metrics_obj)
+        model.build(input_shape=[32, 128, 128, 1])
+        
+        latest = tf.train.latest_checkpoint('saved_params/%s/checkpoints/' % info[1])
+        if latest:
+            model.load_weights(latest)
+        else:
+            logger.error('No checkpoints found.')
         train_ds, test_ds = _prepare_data(info[0], db_level)
         try:
             # TODO fix ValueError: Unknown Layer: CnnModel
@@ -107,7 +98,7 @@ if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO, format=fmt)
     logger = logging.getLogger('AudioEventsNN')
     
-    infos_list = ['mivia cnn 20']
+    infos_list = ['mivia vgg 20']
     
     for infos in infos_list:
         perform_train(infos)
