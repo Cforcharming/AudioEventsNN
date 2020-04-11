@@ -98,7 +98,7 @@ if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO, format=fmt)
     logger = logging.getLogger('AudioEventsNN')
     
-    infos_list = ['mivia vgg 20']
+    infos_list = ['mivia cnn 20', 'mivia bcnn 20', 'mivia vgg 20']
     
     for infos in infos_list:
         perform_train(infos)
