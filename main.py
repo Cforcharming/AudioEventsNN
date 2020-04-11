@@ -81,6 +81,10 @@ def perform_evaluate(ifs, db_level=None):
     strategy = tf.distribute.MirroredStrategy()
     with strategy.scope():
         model = _construct_network(info[1])
+        model.compile(optimizer=model.optimizer_obj,
+                      loss=model.loss_obj,
+                      metrics=model.metrics_obj
+                      )
         model.load_weights('saved_params/%s/models/%s.h5' % (info[1], info[1]))
         train_ds, test_ds = _prepare_data(info[0], db_level)
         try:
