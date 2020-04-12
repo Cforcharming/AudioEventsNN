@@ -140,8 +140,8 @@ if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO, format=fmt)
     logger = logging.getLogger('AudioEventsNN')
     
-    infos = 'mivia vgg 25'
+    infos = 'mivia bcnn 25'
     
-    perform_train()
-    # perform_evaluate()
+    # perform_train()
+    perform_evaluate()
     # v()
