@@ -45,7 +45,6 @@ def perform_train():
             
             model.fit(x=train_ds,
                       epochs=int(info[2]),
-                      steps_per_epoch=1457,
                       verbose=1,
                       validation_data=test_ds,
                       shuffle=True,
