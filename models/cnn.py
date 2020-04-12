@@ -16,7 +16,7 @@ class CnnModel(ModelGen):
                                    name='conv1'
                                    )
         self.conv2 = layers.Conv2D(32, 5, data_format='channels_last', activation='relu', name='conv2')
-        self.conv3 = layers.Conv2D(64, 7, data_format='channels_last', activation='relu',name='conv3')
+        self.conv3 = layers.Conv2D(64, 7, data_format='channels_last', activation='relu', name='conv3')
         self.conv4 = layers.Conv2D(128, 5, data_format='channels_last', activation='relu', name='conv4')
         self.dropout1 = layers.Dropout(0.2, name='drop1')
         self.dropout2 = layers.Dropout(0.2, name='drop2')
@@ -67,8 +67,8 @@ class CnnModel(ModelGen):
         )
         es_callback = tf.keras.callbacks.EarlyStopping(
             monitor='accuracy',
-            min_delta=0.05,
-            patience=10,
+            min_delta=0.01,
+            patience=15,
             restore_best_weights=True
         )
     

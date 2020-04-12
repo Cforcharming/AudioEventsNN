@@ -80,8 +80,8 @@ class BatchedCnnModel(ModelGen):
         )
         es_callback = tf.keras.callbacks.EarlyStopping(
             monitor='accuracy',
-            min_delta=0.05,
-            patience=3,
+            min_delta=0.01,
+            patience=15,
             restore_best_weights=True
         )
     

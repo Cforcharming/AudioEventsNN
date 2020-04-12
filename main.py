@@ -44,13 +44,19 @@ def perform_train(ifs):
         
         try:
             
-            model.fit(x=train_ds, epochs=int(info[2]), verbose=1, shuffle=True, callbacks=model.cbs)
+            model.fit(x=train_ds,
+                      epochs=int(info[2]),
+                      verbose=1,
+                      validation_data=test_ds,
+                      shuffle=True,
+                      callbacks=model.cbs
+                      )
             
         except KeyboardInterrupt:
             logger.info('Stopped by KeyboardInterrupt.')
             
-        except Exception as e:
-            logger.error(e)
+        except Exception as ex:
+            logger.error(ex)
             
         finally:
             logger.info('Done training.')
@@ -88,8 +94,25 @@ def perform_evaluate(ifs, db_level=None):
                 logger.info("Model %s accuracy on dataset %s for SNR=%d: %5.2f" % (info[1], info[0], db_level, acc))
             else:
                 logger.info("Model %s accuracy on dataset %s: %5.2f" % (info[1], info[0], acc))
-        except ValueError as e:
-            logger.error(e)
+        except ValueError as ex:
+            logger.error(ex)
+            
+
+def t():
+    
+    for infos in infos_list:
+        perform_train(infos)
+
+
+def e():
+    
+    for infos in infos_list:
+        if infos.split(' ')[0] == 'mivia':
+            for i in range(5, 31, 5):
+                logger.info('Evaluating performance on %ddB OF SNR' % i)
+                perform_evaluate(infos, db_level=i)
+        else:
+            perform_evaluate(infos)
 
 
 if __name__ == '__main__':
@@ -98,13 +121,6 @@ if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO, format=fmt)
     logger = logging.getLogger('AudioEventsNN')
     
-    infos_list = ['mivia cnn 20', 'mivia bcnn 20', 'mivia vgg 20']
-    
-    for infos in infos_list:
-        perform_train(infos)
-        if infos[0] == 'mivia':
-            for i in range(5, 31, 5):
-                logger.info('Evaluating performance on %ddB OF SNR' % i)
-                perform_evaluate(infos, db_level=i)
-        else:
-            perform_evaluate(infos)
+    infos_list = ['mivia cnn 25', 'mivia bcnn 25', 'mivia vgg 25']
+    t()
+    # e()

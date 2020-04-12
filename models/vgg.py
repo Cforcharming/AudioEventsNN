@@ -73,8 +73,8 @@ class VggModel(ModelGen):
         )
         es_callback = tf.keras.callbacks.EarlyStopping(
             monitor='accuracy',
-            min_delta=0.05,
-            patience=10,
+            min_delta=0.01,
+            patience=15,
             restore_best_weights=True
         )
     
