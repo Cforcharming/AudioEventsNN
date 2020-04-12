@@ -45,6 +45,7 @@ def perform_train():
             
             model.fit(x=train_ds,
                       epochs=int(info[2]),
+                      steps_per_epoch=1457,
                       verbose=1,
                       validation_data=test_ds,
                       shuffle=True,
@@ -77,12 +78,12 @@ def perform_evaluate():
         
         latest = 'saved_params/bcnn/checkpoints/0011_ckpt'
         # latest = tf.train.latest_checkpoint('saved_params/%s/checkpoints/' % info[1])
-        model.load_weights(latest)
+        model.load_weights(latest).expect_partial()
         for db_level in range(5, 31, 5):
             
             train_ds, test_ds = _prepare_data(info[0], db_level)
             
-            loss, acc = model.evaluate(x=test_ds, verbose=1)
+            loss, acc = model.evaluate(x=test_ds, steps=105, verbose=1)
             
             logger.info("Model %s accuracy on dataset %s for SNR=%d: %f" % (info[1], info[0], db_level, acc))
         logger.info('Done evaluating %s' % info[1])
@@ -108,6 +109,7 @@ def v():
             
             model.v3.fit(x=train_ds,
                          epochs=25,
+                         steps_per_epoch=1457,
                          verbose=1,
                          validation_data=test_ds,
                          shuffle=True,
@@ -138,8 +140,8 @@ if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO, format=fmt)
     logger = logging.getLogger('AudioEventsNN')
     
-    infos = 'mivia bcnn 25'
+    infos = 'mivia vgg 25'
     
-    # perform_train()
-    perform_evaluate()
+    perform_train()
+    # perform_evaluate()
     # v()
