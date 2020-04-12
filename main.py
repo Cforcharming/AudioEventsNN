@@ -75,8 +75,8 @@ def perform_evaluate():
         model.compile(optimizer=model.optimizer_obj, loss=model.loss_obj, metrics=model.metrics_obj)
         model.build(input_shape=[32, 128, 128, 1])
         
-        # latest = 'saved_params/cnn/checkpoints/0017_ckpt'
-        latest = tf.train.latest_checkpoint('saved_params/%s/checkpoints/' % info[1])
+        latest = 'saved_params/bcnn/checkpoints/0011_ckpt'
+        # latest = tf.train.latest_checkpoint('saved_params/%s/checkpoints/' % info[1])
         model.load_weights(latest)
         for db_level in range(5, 31, 5):
             
@@ -140,6 +140,6 @@ if __name__ == '__main__':
     
     infos = 'mivia bcnn 25'
     
-    perform_train()
-    # perform_evaluate()
+    # perform_train()
+    perform_evaluate()
     # v()
