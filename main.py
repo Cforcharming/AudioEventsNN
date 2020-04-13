@@ -45,7 +45,7 @@ def perform_train():
             model.load_weights('saved_params/vgg/checkpoints/0005_ckpt')
             model.fit(x=train_ds,
                       epochs=int(info[2]),
-                      verbose=2,
+                      verbose=1,
                       initial_epoch=5,
                       validation_data=test_ds,
                       shuffle=True,
