@@ -68,7 +68,7 @@ class VggModel(ModelGen):
         tb_callback = tf.keras.callbacks.TensorBoard(
             log_dir='saved_params/vgg/tensorboard/' + datetime.now().strftime("%Y%m%d-%H%M%S"),
             histogram_freq=20,
-            write_graph=True,
+            write_graph=False,
             update_freq='batch'
         )
         es_callback = tf.keras.callbacks.EarlyStopping(

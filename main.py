@@ -45,7 +45,7 @@ def perform_train():
             
             model.fit(x=train_ds,
                       epochs=int(info[2]),
-                      verbose=1,
+                      verbose=2,
                       validation_data=test_ds,
                       shuffle=True,
                       callbacks=model.cbs
