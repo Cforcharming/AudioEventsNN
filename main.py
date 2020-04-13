@@ -1,12 +1,12 @@
 from models import cnn, bcnn, inception_v3, vgg
-from datasets import mivia_db
+from datasets import mivia_2
 import tensorflow as tf
 import logging
 
 
 def _prepare_data(db, snr=None):
     if db == 'mivia':
-        return mivia_db.load_data(db_level=snr)
+        return mivia_2.load_data(db_level=snr)
     else:
         raise ValueError('Only mivia is accepted as database.')
 
