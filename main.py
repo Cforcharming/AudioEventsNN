@@ -42,10 +42,11 @@ def perform_train():
         model.compile(optimizer=model.optimizer_obj, loss=model.loss_obj, metrics=model.metrics_obj)
         
         try:
-            
+            model.load_weights('saved_params/vgg/checkpoints/0005_ckpt')
             model.fit(x=train_ds,
                       epochs=int(info[2]),
                       verbose=2,
+                      initial_epoch=5,
                       validation_data=test_ds,
                       shuffle=True,
                       callbacks=model.cbs
