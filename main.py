@@ -45,7 +45,7 @@ def perform_train():
             for ix in range(0, int(info[2])+1, 5):
                 latest = tf.train.latest_checkpoint('saved_params/%s/checkpoints/' % info[1])
                 if latest:
-                    model.load_weights(latest).expect_partial()
+                    model.load_weights(latest)
                 model.fit(x=train_ds,
                           epochs=5,
                           verbose=1,
