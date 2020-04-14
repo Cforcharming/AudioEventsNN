@@ -51,7 +51,6 @@ def perform_train():
                 model.fit(x=train_ds,
                           epochs=5,
                           verbose=1,
-                          initial_epoch=5,
                           validation_data=test_ds,
                           shuffle=True,
                           callbacks=model.cbs
@@ -59,7 +58,10 @@ def perform_train():
         
         except KeyboardInterrupt:
             logger.info('Stopped by KeyboardInterrupt.')
-
+        
+        except Exception as ex:
+            logger.error(ex)
+        
         finally:
             logger.info('Done training.')
 
