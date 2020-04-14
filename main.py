@@ -42,10 +42,12 @@ def perform_train():
         model.compile(optimizer=model.optimizer_obj, loss=model.loss_obj, metrics=model.metrics_obj)
         
         try:
-            for ix in range(0, 31, 5):
+            for ix in range(0, int(info[2])+1, 5):
                 latest = tf.train.latest_checkpoint('saved_params/%s/checkpoints/' % info[1])
                 if latest:
                     model.load_weights(latest)
+                    logger.info('restored latest')
+                logger.info('start training')
                 model.fit(x=train_ds,
                           epochs=5,
                           verbose=1,
@@ -57,10 +59,7 @@ def perform_train():
         
         except KeyboardInterrupt:
             logger.info('Stopped by KeyboardInterrupt.')
-        
-        except Exception as ex:
-            logger.error(ex)
-        
+
         finally:
             logger.info('Done training.')
 
