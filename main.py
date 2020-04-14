@@ -42,7 +42,7 @@ def perform_train():
         model.compile(optimizer=model.optimizer_obj, loss=model.loss_obj, metrics=model.metrics_obj)
         
         try:
-            for ix in range(0, int(info[2])+1, 5):
+            for ix in range(0, 31, 5):
                 latest = tf.train.latest_checkpoint('saved_params/%s/checkpoints/' % info[1])
                 if latest:
                     model.load_weights(latest)
