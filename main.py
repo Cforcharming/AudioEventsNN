@@ -153,5 +153,5 @@ if __name__ == '__main__':
     infos = 'mivia vgg 30'
     
     # perform_train()
-    perform_evaluate()
-    # v()
+    # perform_evaluate()
+    v()
