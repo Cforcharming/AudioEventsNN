@@ -42,15 +42,18 @@ def perform_train():
         model.compile(optimizer=model.optimizer_obj, loss=model.loss_obj, metrics=model.metrics_obj)
         
         try:
-            model.load_weights('saved_params/vgg/checkpoints/0005_ckpt')
-            model.fit(x=train_ds,
-                      epochs=int(info[2]),
-                      verbose=1,
-                      initial_epoch=5,
-                      validation_data=test_ds,
-                      shuffle=True,
-                      callbacks=model.cbs
-                      )
+            for ix in range(0, int(info[2])+1, 5):
+                latest = tf.train.latest_checkpoint('saved_params/%s/checkpoints/' % info[1])
+                if latest:
+                    model.load_weights(latest).expect_partial()
+                model.fit(x=train_ds,
+                          epochs=5,
+                          verbose=1,
+                          initial_epoch=5,
+                          validation_data=test_ds,
+                          shuffle=True,
+                          callbacks=model.cbs
+                          )
         
         except KeyboardInterrupt:
             logger.info('Stopped by KeyboardInterrupt.')
