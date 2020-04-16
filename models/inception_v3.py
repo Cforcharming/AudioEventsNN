@@ -39,5 +39,5 @@ class InceptionV3Model(ModelGen):
             restore_best_weights=True
         )
     
-        cbs = [cp_callback, tb_callback, es_callback]
+        cbs = [cp_callback, es_callback]
         return cbs
