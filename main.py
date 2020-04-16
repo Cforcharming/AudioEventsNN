@@ -104,36 +104,44 @@ def v():
     strategy = tf.distribute.MirroredStrategy()
     with strategy.scope():
         
-        # train_ds, test_ds = _prepare_data('mivia')
+        train_ds, test_ds = _prepare_data('mivia')
         
         model = _construct_network('v3')
         model.v3.compile(optimizer=model.optimizer_obj, loss=model.loss_obj, metrics=model.metrics_obj)
         
         try:
-            # for ix in range(0, 31, 5):
-            #     latest = tf.train.latest_checkpoint('saved_params/v3/checkpoints/')
-            #     if latest:
-            #         model.v3.load_weights(latest)
-            #         logger.info('restored latest')
-            #     logger.info('start training')
-            #     model.v3.fit(x=train_ds,
-            #                  epochs=5,
-            #                  verbose=1,
-            #                  validation_data=test_ds,
-            #                  shuffle=True,
-            #                  callbacks=model.cbs
-            #                  )
-            #
-            # logger.info('Done training.')
-            model.v3.load_weights('saved_params/v3/checkpoints/0003_ckpt').expect_partial()
+            for ix in range(0, 31, 5):
+                latest = tf.train.latest_checkpoint('saved_params/v3/checkpoints/')
+                if latest:
+                    model.v3.load_weights(latest)
+                    logger.info('restored latest')
+                logger.info('start training')
+                model.v3.fit(x=train_ds,
+                             epochs=5,
+                             verbose=1,
+                             validation_data=test_ds,
+                             shuffle=True,
+                             callbacks=model.cbs
+                             )
+                
+        except KeyboardInterrupt:
+            logger.info('Stopped by KeyboardInterrupt.')
+
+        except Exception as ex:
+            logger.error(ex)
+        
+        finally:
+            logger.info('Done training.')
+        
+        try:
+            model.v3.load_weights('saved_params/v3/checkpoints/0003_ckpt')
+            model.save_weights('saved_params/v3/models/final_ckpt')
+            
             for i in range(5, 31, 5):
                 logger.info('Evaluating performance on %ddB OF SNR' % i)
                 train_ds, test_ds = _prepare_data('mivia', i)
                 loss, acc = model.v3.evaluate(x=train_ds, verbose=1)
                 logger.info("Model %s accuracy on dataset %s for SNR=%d: %5.2f" % ('v3', 'mivia', i, acc))
-            
-            model.save_weights('saved_params/v3/models/final_ckpt')
-            logger.info('Done evaluating v3')
         
         except KeyboardInterrupt:
             logger.info('Stopped by KeyboardInterrupt.')
@@ -142,7 +150,7 @@ def v():
             logger.error(ex)
         
         finally:
-            logger.info('Done v3.')
+            logger.info('Done evaluating.')
 
 
 if __name__ == '__main__':
@@ -152,6 +160,6 @@ if __name__ == '__main__':
     
     infos = 'mivia vgg 30'
     
-    perform_train()
+    # perform_train()
     # perform_evaluate()
-    # v()
+    v()
