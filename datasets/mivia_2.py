@@ -3,6 +3,7 @@ import tensorflow as tf
 import numpy as np
 
 
+# noinspection DuplicatedCode
 def load_data(db_level=None):
     
     def _train_gen():
@@ -13,14 +14,13 @@ def load_data(db_level=None):
             for (i, j) in zip(x_train, y_train):
                 yield i, j
         else:
-            for i in range(10, 31, 5):
+            for i in range(15, 31, 5):
                 xy = np.load('data/train%02d.npz' % i, allow_pickle=True)
                 x_train = xy['x']
                 y_train = xy['y']
                 for (k, j) in zip(x_train, y_train):
                     yield k, j
 
-    # noinspection DuplicatedCode
     def _test_gen():
         if db_level is not None:
             xy = np.load('data/test%02d.npz' % db_level, allow_pickle=True)
@@ -29,7 +29,7 @@ def load_data(db_level=None):
             for (i, j) in zip(x_test, y_test):
                 yield i, j
         else:
-            for i in range(10, 31, 5):
+            for i in range(15, 31, 5):
                 xy = np.load('data/test%02d.npz' % i, allow_pickle=True)
                 x_test = xy['x']
                 y_test = xy['y']
@@ -48,6 +48,7 @@ def load_data(db_level=None):
     return train_set, test_set
 
 
+# noinspection DuplicatedCode
 def trans_data():
     for i in range(5, 31, 5):
         tr, te = mivia_db.load_data(db_level=i)
