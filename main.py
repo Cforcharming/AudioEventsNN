@@ -109,32 +109,32 @@ def v():
         model = _construct_network('v3')
         model.v3.compile(optimizer=model.optimizer_obj, loss=model.loss_obj, metrics=model.metrics_obj)
         
+        # try:
+        #     for ix in range(0, 31, 5):
+        #         latest = tf.train.latest_checkpoint('saved_params/v3/checkpoints/')
+        #         if latest:
+        #             model.v3.load_weights(latest)
+        #             logger.info('restored latest')
+        #         logger.info('start training')
+        #         model.v3.fit(x=train_ds,
+        #                      epochs=5,
+        #                      verbose=1,
+        #                      validation_data=test_ds,
+        #                      shuffle=True,
+        #                      callbacks=model.cbs
+        #                      )
+        #
+        # except KeyboardInterrupt:
+        #     logger.info('Stopped by KeyboardInterrupt.')
+        #
+        # except Exception as ex:
+        #     logger.error(ex)
+        #
+        # finally:
+        #     logger.info('Done training.')
+        #
         try:
-            for ix in range(0, 31, 5):
-                latest = tf.train.latest_checkpoint('saved_params/v3/checkpoints/')
-                if latest:
-                    model.v3.load_weights(latest)
-                    logger.info('restored latest')
-                logger.info('start training')
-                model.v3.fit(x=train_ds,
-                             epochs=5,
-                             verbose=1,
-                             validation_data=test_ds,
-                             shuffle=True,
-                             callbacks=model.cbs
-                             )
-                
-        except KeyboardInterrupt:
-            logger.info('Stopped by KeyboardInterrupt.')
-
-        except Exception as ex:
-            logger.error(ex)
-        
-        finally:
-            logger.info('Done training.')
-        
-        try:
-            model.v3.load_weights('saved_params/v3/checkpoints/0003_ckpt')
+            model.v3.load_weights('saved_params/v3/checkpoints/0004_ckpt')
             model.save_weights('saved_params/v3/models/final_ckpt')
             
             for i in range(5, 31, 5):
