@@ -1,4 +1,4 @@
-from models import cnn, bcnn, inception_v3, vgg
+from models import cnn, bcnn, inception_v3, vgg, pix2pix
 from datasets import mivia_2
 import tensorflow as tf
 import logging
@@ -109,33 +109,33 @@ def v():
         model = _construct_network('v3')
         model.v3.compile(optimizer=model.optimizer_obj, loss=model.loss_obj, metrics=model.metrics_obj)
         
-        # try:
-        #     for ix in range(0, 31, 5):
-        #         latest = tf.train.latest_checkpoint('saved_params/v3/checkpoints/')
-        #         if latest:
-        #             model.v3.load_weights(latest)
-        #             logger.info('restored latest')
-        #         logger.info('start training')
-        #         model.v3.fit(x=train_ds,
-        #                      epochs=5,
-        #                      verbose=1,
-        #                      validation_data=test_ds,
-        #                      shuffle=True,
-        #                      callbacks=model.cbs
-        #                      )
-        #
-        # except KeyboardInterrupt:
-        #     logger.info('Stopped by KeyboardInterrupt.')
-        #
-        # except Exception as ex:
-        #     logger.error(ex)
-        #
-        # finally:
-        #     logger.info('Done training.')
+        try:
+            for ix in range(0, 31, 5):
+                latest = tf.train.latest_checkpoint('saved_params/v3/checkpoints/')
+                if latest:
+                    model.v3.load_weights(latest)
+                    logger.info('restored latest')
+                logger.info('start training')
+                model.v3.fit(x=train_ds,
+                             epochs=5,
+                             verbose=1,
+                             validation_data=test_ds,
+                             shuffle=True,
+                             callbacks=model.cbs
+                             )
+
+        except KeyboardInterrupt:
+            logger.info('Stopped by KeyboardInterrupt.')
+
+        except Exception as ex:
+            logger.error(ex)
+
+        finally:
+            logger.info('Done training.')
 
         try:
             model.v3.load_weights('saved_params/v3/checkpoints/0004_ckpt')
-            model.save_weights('saved_params/v3/m2/final_ckpt')
+            model.v3.save_weights('saved_params/v3/models/final_ckpt')
 
             for i in range(5, 31, 5):
                 logger.info('Evaluating performance on %ddB OF SNR' % i)
@@ -157,9 +157,10 @@ if __name__ == '__main__':
     fmt = '%(levelname)s %(asctime)s Line %(lineno)s (LOGGER): %(message)s'
     logging.basicConfig(level=logging.INFO, format=fmt)
     logger = logging.getLogger('AudioEventsNN')
-    
-    infos = 'mivia vgg 30'
-    
+
+    infos = 'mivia v3 30'
+
     # perform_train()
     # perform_evaluate()
     v()
+    # pix2pix.gan_ran(logger)
