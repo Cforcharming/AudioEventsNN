@@ -1,6 +1,7 @@
 from models import inception_v3
 from datasets import mivia_3
 import tensorflow as tf
+import numpy as np
 import time
 import os
 
@@ -165,7 +166,6 @@ def gan_ran(logger):
                                          generator=generator,
                                          discriminator=discriminator)
         
-        # @tf.function
         def train_step(noisy, clear):
             with tf.GradientTape() as gen_tape, tf.GradientTape() as disc_tape:
                 gen_output = generator(noisy)
@@ -187,9 +187,8 @@ def gan_ran(logger):
         # train_noisy10, test_noisy10 = mivia_3.load_data(10)
         
         eval_model = inception_v3.InceptionV3Model()
-        # eval_model.v3.load_weights('saved_params/v3/m2/final_ckpt')
         
-        epochs = 1
+        epochs = 30
         latest = tf.train.latest_checkpoint(checkpoint_prefix)
         if latest:
             checkpoint.restore(latest)
@@ -207,6 +206,7 @@ def gan_ran(logger):
             
             predictions = []
             labels = []
+            truth = None
             
             # Train
             gen_loss, dis_loss = 0, 0
@@ -220,10 +220,11 @@ def gan_ran(logger):
                 
                 predictions.append(prediction)
                 labels.append(l30)
+                truth = c30
                 
                 steps += 1
-                if steps % 10 == 0:
-                    logger.info('10 steps trained.')
+                if steps % 20 == 0:
+                    logger.info('20 steps trained.')
             
             # saving (checkpoint) the model every 5 epochs
             if (epoch + 1) % 5 == 0:
@@ -233,9 +234,10 @@ def gan_ran(logger):
                                                                                                 time.time() - start,
                                                                                                 gen_loss, dis_loss))
             
-            for ii in range(5, 31, 5):
-                logger.info('Evaluating performance on %ddB OF SNR' % ii)
+            eval_model.v3.load_weights('saved_params/v3/m2/final_ckpt')
+            for db in range(5, 31, 5):
+                logger.info('Evaluating performance on %ddB OF SNR' % db)
                 loss, acc = eval_model.v3.evaluate(x=predictions, y=labels, verbose=1)
-                logger.info("Model %s accuracy on dataset %s for SNR=%d: %5.2f" % ('v3', 'mivia', ii, acc))
-        
-        checkpoint.save(file_prefix=checkpoint_prefix)
+                logger.info("4 groups accuracy on dataset %s for SNR=%d: %5.2f" % ('mivia', db, acc))
+            
+            np.savez('saved_params/gan/%02d.npz' % epoch, pred=predictions[-1].numpy()[-1], truth=truth.numpy()[-1])

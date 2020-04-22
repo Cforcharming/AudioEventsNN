@@ -135,7 +135,7 @@ def v():
 
         try:
             model.v3.load_weights('saved_params/v3/checkpoints/0004_ckpt')
-            model.v3.save_weights('saved_params/v3/models/final_ckpt')
+            model.v3.save_weights('saved_params/v3/m2/final_ckpt')
 
             for i in range(5, 31, 5):
                 logger.info('Evaluating performance on %ddB OF SNR' % i)
@@ -162,5 +162,5 @@ if __name__ == '__main__':
 
     # perform_train()
     # perform_evaluate()
-    v()
-    # pix2pix.gan_ran(logger)
+    # v()
+    pix2pix.gan_ran(logger)

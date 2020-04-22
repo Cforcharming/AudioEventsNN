@@ -14,7 +14,7 @@ def load_data(db_level=None):
             for (i, j) in zip(x_train, y_train):
                 yield i, j
         else:
-            for i in range(10, 31, 5):
+            for i in range(15, 31, 5):
                 xy = np.load('data/train%02d.npz' % i, allow_pickle=True)
                 x_train = xy['x']
                 y_train = xy['y']
@@ -29,7 +29,7 @@ def load_data(db_level=None):
             for (i, j) in zip(x_test, y_test):
                 yield i, j
         else:
-            for i in range(10, 31, 5):
+            for i in range(15, 31, 5):
                 xy = np.load('data/test%02d.npz' % i, allow_pickle=True)
                 x_test = xy['x']
                 y_test = xy['y']
