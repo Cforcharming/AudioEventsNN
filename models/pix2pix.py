@@ -187,6 +187,9 @@ def gan_ran(logger):
         # train_noisy10, test_noisy10 = mivia_3.load_data(10)
         
         eval_model = inception_v3.InceptionV3Model()
+        eval_model.v3.compile()
+        eval_model.v3.build(input_shape=[32, 128, 128, 1])
+        eval_model.v3.load_weights('saved_params/v3/m2/final_ckpt').expect_partial()
         
         epochs = 30
         latest = tf.train.latest_checkpoint(checkpoint_prefix)
@@ -234,7 +237,6 @@ def gan_ran(logger):
                                                                                                 time.time() - start,
                                                                                                 gen_loss, dis_loss))
             
-            eval_model.v3.load_weights('saved_params/v3/m2/final_ckpt')
             for db in range(5, 31, 5):
                 logger.info('Evaluating performance on %ddB OF SNR' % db)
                 loss, acc = eval_model.v3.evaluate(x=predictions, y=labels, verbose=1)

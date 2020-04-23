@@ -123,7 +123,7 @@ def v():
                              shuffle=True,
                              callbacks=model.cbs
                              )
-
+                logger.info('executed: %d' % ix)
         except KeyboardInterrupt:
             logger.info('Stopped by KeyboardInterrupt.')
 
@@ -133,24 +133,24 @@ def v():
         finally:
             logger.info('Done training.')
 
-        try:
-            model.v3.load_weights('saved_params/v3/checkpoints/0004_ckpt')
-            model.v3.save_weights('saved_params/v3/m2/final_ckpt')
-
-            for i in range(5, 31, 5):
-                logger.info('Evaluating performance on %ddB OF SNR' % i)
-                train_ds, test_ds = _prepare_data('mivia', i)
-                loss, acc = model.v3.evaluate(x=train_ds, verbose=1)
-                logger.info("Model %s accuracy on dataset %s for SNR=%d: %5.2f" % ('v3', 'mivia', i, acc))
-
-        except KeyboardInterrupt:
-            logger.info('Stopped by KeyboardInterrupt.')
-
-        except Exception as ex:
-            logger.error(ex)
-
-        finally:
-            logger.info('Done evaluating.')
+        # try:
+        #     model.v3.load_weights('saved_params/v3/checkpoints/0004_ckpt')
+        #     model.v3.save_weights('saved_params/v3/m2/final_ckpt')
+        #
+        #     for i in range(5, 31, 5):
+        #         logger.info('Evaluating performance on %ddB OF SNR' % i)
+        #         train_ds, test_ds = _prepare_data('mivia', i)
+        #         loss, acc = model.v3.evaluate(x=train_ds, verbose=1)
+        #         logger.info("Model %s accuracy on dataset %s for SNR=%d: %5.2f" % ('v3', 'mivia', i, acc))
+        #
+        # except KeyboardInterrupt:
+        #     logger.info('Stopped by KeyboardInterrupt.')
+        #
+        # except Exception as ex:
+        #     logger.error(ex)
+        #
+        # finally:
+        #     logger.info('Done evaluating.')
 
 
 if __name__ == '__main__':
@@ -163,4 +163,4 @@ if __name__ == '__main__':
     # perform_train()
     # perform_evaluate()
     v()
-    pix2pix.gan_ran(logger)
+    # pix2pix.gan_ran(logger)
