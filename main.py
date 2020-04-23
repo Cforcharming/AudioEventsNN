@@ -134,13 +134,14 @@ def v():
         #     logger.info('Done training.')
 
         try:
-            model.v3.load_weights('saved_params/v3/checkpoints/0004_ckpt')
-            model.v3.save_weights('saved_params/v3/m2/final_ckpt')
+            # model.v3.load_weights('saved_params/v3/checkpoints/0004_ckpt')
+            model.v3.load_weights('saved_params/v3/m2/final_ckpt').expect_partial()
+            # model.v3.save_weights('saved_params/v3/m2/final_ckpt')
 
             for i in range(5, 31, 5):
                 logger.info('Evaluating performance on %ddB OF SNR' % i)
                 train_ds, test_ds = _prepare_data('mivia', i)
-                loss, acc = model.v3.evaluate(x=train_ds, verbose=1)
+                loss, acc = model.v3.evaluate(x=test_ds, verbose=1)
                 logger.info("Model %s accuracy on dataset %s for SNR=%d: %5.2f" % ('v3', 'mivia', i, acc))
 
         except KeyboardInterrupt:
