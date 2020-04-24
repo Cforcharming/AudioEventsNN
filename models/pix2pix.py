@@ -201,14 +201,9 @@ def gan_run(logger):
             logger.info('restored latest checkpoint')
         
         @tf.function
-        def map_fun(data_tr, data_te):
-            (dtr, ltr) = data_tr
-            (dte, lte) = data_te
-            dtr = generator(dtr)
-            dte = generator(dte)
-            data_tr = (dtr, ltr)
-            data_te = (dte, lte)
-            return data_tr, data_te
+        def map_fun(data, label):
+            data = generator(data)
+            return data, label
         
         @tf.function
         def one_step(n, c):
@@ -278,14 +273,18 @@ def gan_run(logger):
         except Exception as e:
             logger.error(e)
         finally:
-            train, test = mivia_3.load_data().map(map_func=map_fun)
+            train, test = mivia_3.load_data()
             try:
-                eval_model.v3.fit(train, epochs=30, verbose=1, validation_data=test, shuffle=True)
+                eval_model.v3.fit(train,
+                                  epochs=30,
+                                  verbose=1,
+                                  validation_data=train.map(map_func=map_fun),
+                                  shuffle=True)
             except KeyboardInterrupt:
                 pass
             except Exception as e:
                 logger.error(e)
             for db in range(5, 31, 5):
                 logger.info('Evaluating performance on %ddB OF SNR' % db)
-                loss, acc = eval_model.v3.evaluate(x=test, verbose=1)
+                loss, acc = eval_model.v3.evaluate(x=test.map(map_func=map_fun), verbose=1)
                 logger.info("4 groups accuracy on dataset %s for SNR=%d: %5.2f" % ('mivia', db, acc))
