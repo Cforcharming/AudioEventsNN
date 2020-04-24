@@ -232,7 +232,7 @@ def gan_run(logger):
                     gen_loss = strategy.reduce(tf.distribute.ReduceOp.SUM, per_replica_gen_loss, axis=None)
                     dis_loss = strategy.reduce(tf.distribute.ReduceOp.SUM, per_replica_dis_loss, axis=None)
                     prediction = per_replica_prediction.values
-                    reduced_l = l30.valus
+                    reduced_l = l30.values
                     for p in prediction:
                         predictions.append(p)
                     for lbs in reduced_l:
