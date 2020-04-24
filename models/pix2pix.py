@@ -232,15 +232,17 @@ def gan_run(logger):
                     gen_loss = strategy.reduce(tf.distribute.ReduceOp.SUM, per_replica_gen_loss, axis=None)
                     dis_loss = strategy.reduce(tf.distribute.ReduceOp.SUM, per_replica_dis_loss, axis=None)
                     prediction = per_replica_prediction.values
+                    ground_truth = c30.values
                     reduced_l = l30.values
                     for p in prediction:
-                        logger.info(p)
-                        break
-                        predictions.append(p)
+                        for pp in p:
+                            logger.info(pp)
+                            exit()
+                            predictions.append(pp)
                     for lbs in reduced_l:
-                        logger.info(lbs)
-                        exit()
-                        labels.append(lbs)
+                        for ll in lbs:
+                            labels.append(ll)
+                    
                     steps += 1
                     if steps % 100 == 0:
                         logger.info('100 steps trained.')
@@ -249,7 +251,9 @@ def gan_run(logger):
                 if (epoch + 1) % 20 == 0:
                     checkpoint.save(file_prefix=checkpoint_prefix)
                 
-                np.savez('saved_params/gan/%02d.npz' % epoch, pred=prediction[-1].numpy(),  truth=labels[-1].numpy())
+                np.savez('saved_params/gan/%02d.npz' % epoch,
+                         pred=prediction[-1].numpy(),
+                         truth=ground_truth[-1][-1].numpy())
                 
                 logger.info('Time taken for epoch {} is {} sec\n gen loss: {}, dis loss: {}'.format(epoch + 1,
                                                                                                     time.time() - start,
