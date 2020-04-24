@@ -210,8 +210,8 @@ def gan_run(logger):
             
             logger.info("Epoch: %d" % epoch)
             
-            predictions = []
-            labels = []
+            # predictions = []
+            # labels = []
             
             # Train
             gen_loss, dis_loss = 0, 0
@@ -223,12 +223,13 @@ def gan_run(logger):
                 (c30, l30) = target
                 gen_loss, dis_loss, prediction = one_step(n5, c30)
                 
-                predictions.append(prediction)
-                labels.append(l30)
+                # predictions.append(prediction)
+                # labels.append(l30)
                 
                 steps += 1
                 if steps % 100 == 0:
                     logger.info('100 steps trained.')
+                    logger.info(prediction)
             
             # saving (checkpoint) the model every 5 epochs
             if (epoch + 1) % 5 == 0:
@@ -238,13 +239,13 @@ def gan_run(logger):
                                                                                                 time.time() - start,
                                                                                                 gen_loss, dis_loss))
             
-            disc_set = strategy.experimental_distribute_dataset(tf.data.Dataset.
-                                                                from_tensor_slices((predictions, labels)))
-            for db in range(5, 31, 5):
-                logger.info('Evaluating performance on %ddB OF SNR' % db)
-                loss, acc = eval_model.v3.evaluate(x=disc_set, verbose=1)
-                logger.info("4 groups accuracy on dataset %s for SNR=%d: %5.2f" % ('mivia', db, acc))
-            
-            for (p, l) in disc_set:
-                np.savez('saved_params/gan/%02d.npz' % epoch, pred=p.numpy(),  truth=l.numpy())
-                break
+            # disc_set = strategy.experimental_distribute_dataset(tf.data.Dataset.
+            #                                                     from_tensor_slices((predictions, labels)))
+            # for db in range(5, 31, 5):
+            #     logger.info('Evaluating performance on %ddB OF SNR' % db)
+            #     loss, acc = eval_model.v3.evaluate(x=disc_set, verbose=1)
+            #     logger.info("4 groups accuracy on dataset %s for SNR=%d: %5.2f" % ('mivia', db, acc))
+            #
+            # for (p, l) in disc_set:
+            #     np.savez('saved_params/gan/%02d.npz' % epoch, pred=p.numpy(),  truth=l.numpy())
+            #     break
