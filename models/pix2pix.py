@@ -194,7 +194,7 @@ def gan_run(logger):
         eval_model.v3.build(input_shape=[32, 128, 128, 1])
         eval_model.v3.load_weights('saved_params/v3/m2/final_ckpt').expect_partial()
         
-        epochs = 100
+        epochs = 99
         latest = tf.train.latest_checkpoint(checkpoint_prefix)
         if latest:
             checkpoint.restore(latest)
@@ -240,6 +240,10 @@ def gan_run(logger):
                     for lbs in reduced_l:
                         for ll in lbs:
                             labels.append(ll)
+                    for gt in ground_truth:
+                        for g in gt:
+                            truth = g
+                            break
                     
                     steps += 1
                     if steps % 100 == 0:
@@ -250,19 +254,20 @@ def gan_run(logger):
                     checkpoint.save(file_prefix=checkpoint_prefix)
                 
                 np.savez('saved_params/gan/%02d.npz' % epoch,
-                         pred=prediction[-1].numpy(),
-                         truth=ground_truth[-1][-1].numpy())
+                         pred=predictions[-1].numpy(),
+                         truth=truth.numpy())
                 
                 logger.info('Time taken for epoch {} is {} sec\n gen loss: {}, dis loss: {}'.format(epoch + 1,
                                                                                                     time.time() - start,
                                                                                                     gen_loss,
                                                                                                     dis_loss))
                 
-            new_ds = tf.data.Dataset.from_tensor_slices((prediction, labels)).batch(32)
-            for db in range(5, 31, 5):
-                logger.info('Evaluating performance on %ddB OF SNR' % db)
-                loss, acc = eval_model.v3.evaluate(x=new_ds, verbose=1)
-                logger.info("4 groups accuracy on dataset %s for SNR=%d: %5.2f" % ('mivia', db, acc))
+                new_ds = tf.data.Dataset.from_tensor_slices((predictions, labels)).batch(32)
+                for db in range(5, 31, 5):
+                    logger.info('Evaluating performance on %ddB OF SNR' % db)
+                    loss, acc = eval_model.v3.evaluate(x=new_ds, verbose=1)
+                    logger.info("4 groups accuracy on dataset %s for SNR=%d: %5.2f" % ('mivia', db, acc))
+        
         except KeyboardInterrupt:
             train, test = mivia_3.load_data()
             train.map(map_func=map_fun)
