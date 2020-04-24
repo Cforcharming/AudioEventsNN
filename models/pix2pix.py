@@ -185,7 +185,7 @@ def gan_run(logger):
         
         train_clear, test_clear = mivia_3.load_data(30)
         train_noisy5, test_noisy5 = mivia_3.load_data(5)
-        # train_noisy10, test_noisy10 = mivia_3.load_data(10)
+        train, test = mivia_3.load_data()
         
         eval_model = inception_v3.InceptionV3Model()
         eval_model.v3.compile(optimizer=eval_model.optimizer_obj,
@@ -195,7 +195,7 @@ def gan_run(logger):
         eval_model.v3.load_weights('saved_params/v3/m2/final_ckpt').expect_partial()
         
         epochs = 99
-        latest = tf.train.latest_checkpoint(checkpoint_prefix)
+        latest = tf.train.latest_checkpoint(checkpoint_dir)
         if latest:
             checkpoint.restore(latest)
             logger.info('restored latest checkpoint')
@@ -217,10 +217,11 @@ def gan_run(logger):
                 
                 predictions = []
                 labels = []
+                truths = []
                 
                 # Train
                 gen_loss, dis_loss = 0, 0
-                steps = 0
+                # steps = 0
                 
                 for (input_image, target) in zip(strategy.experimental_distribute_dataset(train_noisy5),
                                                  strategy.experimental_distribute_dataset(train_clear)):
@@ -241,31 +242,32 @@ def gan_run(logger):
                             labels.append(ll)
                     for gt in ground_truth:
                         for g in gt:
-                            truth = g
+                            truths.append(g)
                             break
-                    
-                    steps += 1
-                    if steps % 100 == 0:
-                        logger.info('100 steps trained.')
-                        break
+                    #
+                    # steps += 1
+                    # if steps % 100 == 0:
+                    #     logger.info('100 steps trained.')
+                    #     break
                 
                 # saving (checkpoint) the model every 20 epochs
-                # if (epoch + 1) % 20 == 0:
-                checkpoint.save(file_prefix=checkpoint_prefix)
+                if (epoch + 1) % 20 == 0:
+                    checkpoint.save(file_prefix=checkpoint_prefix)
                 
                 np.savez('saved_params/gan/%02d.npz' % epoch,
                          pred=predictions[-1].numpy(),
-                         truth=truth.numpy())
+                         truth=truths[-1].numpy(),
+                         label=labels[-1].numpy())
                 
                 logger.info('Time taken for epoch {} is {} sec\n gen loss: {}, dis loss: {}'.format(epoch + 1,
                                                                                                     time.time() - start,
                                                                                                     gen_loss,
                                                                                                     dis_loss))
                 
-                new_ds = tf.data.Dataset.from_tensor_slices((predictions, labels)).batch(32)
                 for db in range(5, 31, 5):
+                    te, tr = mivia_3.load_data(db)
                     logger.info('Evaluating performance on %ddB OF SNR' % db)
-                    loss, acc = eval_model.v3.evaluate(x=new_ds, verbose=1)
+                    loss, acc = eval_model.v3.evaluate(x=tr.map(map_func=map_fun), verbose=1)
                     logger.info("4 groups accuracy on dataset %s for SNR=%d: %5.2f" % ('mivia', db, acc))
         
         except KeyboardInterrupt:
@@ -273,8 +275,8 @@ def gan_run(logger):
         except Exception as e:
             logger.error(e)
         finally:
-            train, test = mivia_3.load_data()
             try:
+                logger.info('re-training based on generated data')
                 eval_model.v3.fit(train,
                                   epochs=30,
                                   verbose=1,
