@@ -236,8 +236,6 @@ def gan_run(logger):
                     reduced_l = l30.values
                     for p in prediction:
                         for pp in p:
-                            logger.info(pp)
-                            exit()
                             predictions.append(pp)
                     for lbs in reduced_l:
                         for ll in lbs:
