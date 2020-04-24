@@ -1,7 +1,7 @@
 from models import inception_v3
 from datasets import mivia_3
 import tensorflow as tf
-import numpy as np
+# import numpy as np
 import time
 import os
 
@@ -201,50 +201,62 @@ def gan_run(logger):
             logger.info('restored latest checkpoint')
         
         @tf.function
+        def map_fun(inputs):
+            data, label = inputs
+            data = generator(data)
+            return data, label
+        
+        @tf.function
         def one_step(n, c):
             gl, dl, pred = strategy.experimental_run_v2(train_step, args=(n, c))
             return gl, dl, pred
-        
-        for epoch in range(epochs):
-            start = time.time()
-            
-            logger.info("Epoch: %d" % epoch)
-            
-            predictions = []
-            labels = []
-            
-            # Train
-            gen_loss, dis_loss = 0, 0
-            steps = 0
-            
-            for (input_image, target) in zip(strategy.experimental_distribute_dataset(train_noisy5),
-                                             strategy.experimental_distribute_dataset(train_clear)):
-                (n5, l5) = input_image
-                (c30, l30) = target
-                per_replica_gen_loss, per_replica_dis_loss, per_replica_prediction = one_step(n5, c30)
+        try:
+            for epoch in range(epochs):
+                start = time.time()
                 
-                gen_loss = strategy.reduce(tf.distribute.ReduceOp.SUM, per_replica_gen_loss, axis=None)
-                dis_loss = strategy.reduce(tf.distribute.ReduceOp.SUM, per_replica_dis_loss, axis=None)
-                prediction = strategy.reduce(tf.distribute.ReduceOp.SUM, per_replica_prediction, axis=None)
+                logger.info("Epoch: %d" % epoch)
                 
-                predictions.append(prediction)
-                labels.append(l30)
+                predictions = []
+                labels = []
                 
-                steps += 1
-                if steps % 100 == 0:
-                    logger.info('100 steps trained.')
-            
-            # saving (checkpoint) the model every 20 epochs
-            if (epoch + 1) % 20 == 0:
-                checkpoint.save(file_prefix=checkpoint_prefix)
-            
-            np.savez('saved_params/gan/%02d.npz' % epoch, pred=prediction.numpy(),  truth=c30.numpy())
-            logger.info('Time taken for epoch {} is {} sec\n gen loss: {}, dis loss: {}'.format(epoch + 1,
-                                                                                                time.time() - start,
-                                                                                                gen_loss,
-                                                                                                dis_loss))
-            
+                # Train
+                gen_loss, dis_loss = 0, 0
+                steps = 0
+                
+                for (input_image, target) in zip(strategy.experimental_distribute_dataset(train_noisy5),
+                                                 strategy.experimental_distribute_dataset(train_clear)):
+                    (n5, l5) = input_image
+                    (c30, l30) = target
+                    per_replica_gen_loss, per_replica_dis_loss, prediction = one_step(n5, c30)
+                    
+                    gen_loss = strategy.reduce(tf.distribute.ReduceOp.SUM, per_replica_gen_loss, axis=None)
+                    dis_loss = strategy.reduce(tf.distribute.ReduceOp.SUM, per_replica_dis_loss, axis=None)
+                    # prediction = strategy.reduce(tf.distribute.ReduceOp.SUM, per_replica_prediction, axis=None)
+                    
+                    predictions.append(prediction)
+                    labels.append(l30)
+                    
+                    steps += 1
+                    if steps % 100 == 0:
+                        logger.info('100 steps trained.')
+                
+                # saving (checkpoint) the model every 20 epochs
+                if (epoch + 1) % 20 == 0:
+                    checkpoint.save(file_prefix=checkpoint_prefix)
+                
+                # np.savez('saved_params/gan/%02d.npz' % epoch, pred=prediction.numpy(),  truth=c30.numpy())
+                logger.info(prediction)
+                exit()
+                logger.info('Time taken for epoch {} is {} sec\n gen loss: {}, dis loss: {}'.format(epoch + 1,
+                                                                                                    time.time() - start,
+                                                                                                    gen_loss,
+                                                                                                    dis_loss))
+                
             for db in range(5, 31, 5):
                 logger.info('Evaluating performance on %ddB OF SNR' % db)
                 loss, acc = eval_model.v3.evaluate(x=predictions, y=labels, verbose=1)
                 logger.info("4 groups accuracy on dataset %s for SNR=%d: %5.2f" % ('mivia', db, acc))
+        except KeyboardInterrupt:
+            train, test = mivia_3.load_data()
+            train.map(map_func=map_fun)
+            eval_model.v3.fit(train, epochs=30, verbose=1, validation_data=test, shuffle=True)
