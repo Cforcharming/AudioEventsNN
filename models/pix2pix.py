@@ -227,11 +227,11 @@ def gan_run(logger):
                                                  strategy.experimental_distribute_dataset(train_clear)):
                     (n5, l5) = input_image
                     (c30, l30) = target
-                    per_replica_gen_loss, per_replica_dis_loss, prediction = one_step(n5, c30)
+                    per_replica_gen_loss, per_replica_dis_loss, per_replica_prediction = one_step(n5, c30)
                     
                     gen_loss = strategy.reduce(tf.distribute.ReduceOp.SUM, per_replica_gen_loss, axis=None)
                     dis_loss = strategy.reduce(tf.distribute.ReduceOp.SUM, per_replica_dis_loss, axis=None)
-                    # prediction = strategy.reduce(tf.distribute.ReduceOp.SUM, per_replica_prediction, axis=None)
+                    prediction = per_replica_prediction.values
                     
                     predictions.append(prediction)
                     labels.append(l30)
@@ -246,11 +246,11 @@ def gan_run(logger):
                 
                 # np.savez('saved_params/gan/%02d.npz' % epoch, pred=prediction.numpy(),  truth=c30.numpy())
                 logger.info(prediction)
-                exit()
                 logger.info('Time taken for epoch {} is {} sec\n gen loss: {}, dis loss: {}'.format(epoch + 1,
                                                                                                     time.time() - start,
                                                                                                     gen_loss,
                                                                                                     dis_loss))
+                exit()
                 
             for db in range(5, 31, 5):
                 logger.info('Evaluating performance on %ddB OF SNR' % db)
