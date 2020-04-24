@@ -234,11 +234,13 @@ def gan_run(logger):
                     prediction = per_replica_prediction.values
                     reduced_l = l30.values
                     for p in prediction:
+                        logger.info(p)
+                        break
                         predictions.append(p)
                     for lbs in reduced_l:
+                        logger.info(lbs)
+                        exit()
                         labels.append(lbs)
-                    logger.info('%d %d' % (len(predictions), len(labels)))
-                    exit()
                     steps += 1
                     if steps % 100 == 0:
                         logger.info('100 steps trained.')
