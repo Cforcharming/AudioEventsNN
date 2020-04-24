@@ -1,7 +1,7 @@
 from models import inception_v3
 from datasets import mivia_3
 import tensorflow as tf
-# import numpy as np
+import numpy as np
 import time
 import os
 
@@ -232,10 +232,10 @@ def gan_run(logger):
                     gen_loss = strategy.reduce(tf.distribute.ReduceOp.SUM, per_replica_gen_loss, axis=None)
                     dis_loss = strategy.reduce(tf.distribute.ReduceOp.SUM, per_replica_dis_loss, axis=None)
                     prediction = per_replica_prediction.values
-                    logger.info(prediction)
-                    exit()
-                    predictions.append(prediction)
-                    labels.append(l30)
+                    for p in prediction:
+                        predictions.append(p)
+                    for lbs in l30:
+                        labels.append(lbs)
                     
                     steps += 1
                     if steps % 100 == 0:
@@ -245,16 +245,17 @@ def gan_run(logger):
                 if (epoch + 1) % 20 == 0:
                     checkpoint.save(file_prefix=checkpoint_prefix)
                 
-                # np.savez('saved_params/gan/%02d.npz' % epoch, pred=prediction.numpy(),  truth=c30.numpy())
+                np.savez('saved_params/gan/%02d.npz' % epoch, pred=prediction[-1].numpy(),  truth=labels[-1].numpy())
                 
                 logger.info('Time taken for epoch {} is {} sec\n gen loss: {}, dis loss: {}'.format(epoch + 1,
                                                                                                     time.time() - start,
                                                                                                     gen_loss,
                                                                                                     dis_loss))
                 
+            new_ds = tf.data.Dataset.from_tensor_slices((prediction, labels)).batch(32)
             for db in range(5, 31, 5):
                 logger.info('Evaluating performance on %ddB OF SNR' % db)
-                loss, acc = eval_model.v3.evaluate(x=predictions, y=labels, verbose=1)
+                loss, acc = eval_model.v3.evaluate(x=new_ds, verbose=1)
                 logger.info("4 groups accuracy on dataset %s for SNR=%d: %5.2f" % ('mivia', db, acc))
         except KeyboardInterrupt:
             train, test = mivia_3.load_data()
