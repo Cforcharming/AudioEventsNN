@@ -237,7 +237,7 @@ def gan_run(logger):
                         predictions.append(p)
                     for lbs in reduced_l:
                         labels.append(lbs)
-                    print(len(predictions), len(labels))
+                    logger.info(len(predictions), len(labels))
                     exit()
                     steps += 1
                     if steps % 100 == 0:
