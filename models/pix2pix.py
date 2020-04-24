@@ -189,7 +189,7 @@ def gan_run(logger):
                               loss=eval_model.loss_obj,
                               metrics=eval_model.metrics_obj)
         eval_model.v3.build(input_shape=[32, 128, 128, 1])
-        # eval_model.v3.load_weights('saved_params/v3/m2/final_ckpt').expect_partial()
+        eval_model.v3.load_weights('saved_params/v3/m2/final_ckpt').expect_partial()
         
         epochs = 30
         latest = tf.train.latest_checkpoint(checkpoint_prefix)
@@ -220,8 +220,8 @@ def gan_run(logger):
                 (c30, l30) = target
                 gen_loss, dis_loss, prediction = one_step(n5, c30)
                 
-                predictions = prediction
-                labels = l30
+                predictions.append(prediction.numpy())
+                labels.append(l30.numpy())
                 
                 steps += 1
                 if steps % 100 == 0:
@@ -235,11 +235,10 @@ def gan_run(logger):
                                                                                                 time.time() - start,
                                                                                                 gen_loss, dis_loss))
             
-            # preds = tf.data.Dataset.from_tensor_slices((predictions, labels))
-            # for db in range(5, 31, 5):
-            #     logger.info('Evaluating performance on %ddB OF SNR' % db)
-            #     loss, acc = eval_model.v3.evaluate(x=preds, verbose=1)
-            #     logger.info("4 groups accuracy on dataset %s for SNR=%d: %5.2f" % ('mivia', db, acc))
+            for db in range(5, 31, 5):
+                logger.info('Evaluating performance on %ddB OF SNR' % db)
+                loss, acc = eval_model.v3.evaluate(x=predictions, y=labels, verbose=1)
+                logger.info("4 groups accuracy on dataset %s for SNR=%d: %5.2f" % ('mivia', db, acc))
             
-            np.savez('saved_params/gan/%02d.npz' % epoch, pred=predictions.numpy()[-1],
-                     truth=labels.numpy()[-1])
+            np.savez('saved_params/gan/%02d.npz' % epoch, pred=predictions[-1][-1],
+                     truth=labels[-1][-1])
