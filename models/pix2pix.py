@@ -1,4 +1,4 @@
-# from models import inception_v3
+from models import inception_v3
 from datasets import mivia_3
 import tensorflow as tf
 import numpy as np
@@ -187,12 +187,12 @@ def gan_run(logger):
         train_noisy5, test_noisy5 = mivia_3.load_data(5)
         # train_noisy10, test_noisy10 = mivia_3.load_data(10)
         
-        # eval_model = inception_v3.InceptionV3Model()
-        # eval_model.v3.compile(optimizer=eval_model.optimizer_obj,
-        #                       loss=eval_model.loss_obj,
-        #                       metrics=eval_model.metrics_obj)
-        # eval_model.v3.build(input_shape=[32, 128, 128, 1])
-        # eval_model.v3.load_weights('saved_params/v3/m2/final_ckpt').expect_partial()
+        eval_model = inception_v3.InceptionV3Model()
+        eval_model.v3.compile(optimizer=eval_model.optimizer_obj,
+                              loss=eval_model.loss_obj,
+                              metrics=eval_model.metrics_obj)
+        eval_model.v3.build(input_shape=[32, 128, 128, 1])
+        eval_model.v3.load_weights('saved_params/v3/m2/final_ckpt').expect_partial()
         
         epochs = 100
         latest = tf.train.latest_checkpoint(checkpoint_prefix)
@@ -210,8 +210,8 @@ def gan_run(logger):
             
             logger.info("Epoch: %d" % epoch)
             
-            # predictions = []
-            # labels = []
+            predictions = []
+            labels = []
             
             # Train
             gen_loss, dis_loss = 0, 0
@@ -221,10 +221,14 @@ def gan_run(logger):
                                              strategy.experimental_distribute_dataset(train_clear)):
                 (n5, l5) = input_image
                 (c30, l30) = target
-                gen_loss, dis_loss, prediction = one_step(n5, c30)
+                per_replica_gen_loss, per_replica_dis_loss, per_replica_prediction = one_step(n5, c30)
                 
-                # predictions.append(prediction)
-                # labels.append(l30)
+                gen_loss = strategy.reduce(tf.distribute.ReduceOp.SUM, per_replica_gen_loss, axis=None)
+                dis_loss = strategy.reduce(tf.distribute.ReduceOp.SUM, per_replica_dis_loss, axis=None)
+                prediction = strategy.reduce(tf.distribute.ReduceOp.SUM, per_replica_prediction, axis=None)
+                
+                predictions.append(prediction)
+                labels.append(l30)
                 
                 steps += 1
                 if steps % 100 == 0:
@@ -237,13 +241,10 @@ def gan_run(logger):
             np.savez('saved_params/gan/%02d.npz' % epoch, pred=prediction.numpy(),  truth=c30.numpy())
             logger.info('Time taken for epoch {} is {} sec\n gen loss: {}, dis loss: {}'.format(epoch + 1,
                                                                                                 time.time() - start,
-                                                                                                gen_loss, dis_loss))
+                                                                                                gen_loss,
+                                                                                                dis_loss))
             
-            # disc_set = strategy.experimental_distribute_dataset(tf.data.Dataset.
-            #                                                     from_tensor_slices((predictions, labels)))
-            # for db in range(5, 31, 5):
-            #     logger.info('Evaluating performance on %ddB OF SNR' % db)
-            #     loss, acc = eval_model.v3.evaluate(x=disc_set, verbose=1)
-            #     logger.info("4 groups accuracy on dataset %s for SNR=%d: %5.2f" % ('mivia', db, acc))
-            #
-            # for (p, l) in disc_set:
+            for db in range(5, 31, 5):
+                logger.info('Evaluating performance on %ddB OF SNR' % db)
+                loss, acc = eval_model.v3.evaluate(x=predictions, y=labels, verbose=1)
+                logger.info("4 groups accuracy on dataset %s for SNR=%d: %5.2f" % ('mivia', db, acc))
