@@ -101,9 +101,11 @@ def gan_run(logger):
         
         loss_object = tf.keras.losses.BinaryCrossentropy(from_logits=True, reduction=tf.keras.losses.Reduction.NONE)
         
+        global_batch_size = 32 * strategy.num_replicas_in_sync
+        
         def generator_loss(disc_generated_output, gen_output, tgt):
             gan_loss = tf.reduce_sum(
-                loss_object(tf.ones_like(disc_generated_output), disc_generated_output) * (1. / 128))
+                loss_object(tf.ones_like(disc_generated_output), disc_generated_output) * (1./global_batch_size))
             
             # mean absolute error
             l1_loss = tf.reduce_mean(tf.abs(tgt - gen_output))
@@ -143,10 +145,11 @@ def gan_run(logger):
             return tf.keras.Model(inputs=[inp, tar], outputs=last)
         
         def discriminator_loss(disc_real_output, disc_generated_output):
-            real_loss = tf.reduce_sum(loss_object(tf.ones_like(disc_real_output), disc_real_output) * (1. / 128))
+            real_loss = tf.reduce_sum(loss_object(tf.ones_like(disc_real_output), disc_real_output)
+                                      * (1./global_batch_size))
             
             generated_loss = tf.reduce_sum(loss_object(tf.zeros_like(disc_generated_output),
-                                                       disc_generated_output) * (1. / 128))
+                                                       disc_generated_output) * (1./global_batch_size))
             
             total_disc_loss = real_loss + generated_loss
             
@@ -220,8 +223,8 @@ def gan_run(logger):
                 (c30, l30) = target
                 gen_loss, dis_loss, prediction = one_step(n5, c30)
                 
-                predictions.append(prediction.numpy())
-                labels.append(l30.numpy())
+                predictions.append(prediction)
+                labels.append(l30)
                 
                 steps += 1
                 if steps % 100 == 0:
@@ -235,10 +238,13 @@ def gan_run(logger):
                                                                                                 time.time() - start,
                                                                                                 gen_loss, dis_loss))
             
+            disc_set = strategy.experimental_distribute_dataset(tf.data.Dataset.
+                                                                from_tensor_slices((predictions, labels)))
             for db in range(5, 31, 5):
                 logger.info('Evaluating performance on %ddB OF SNR' % db)
-                loss, acc = eval_model.v3.evaluate(x=predictions, y=labels, verbose=1)
+                loss, acc = eval_model.v3.evaluate(x=disc_set, verbose=1)
                 logger.info("4 groups accuracy on dataset %s for SNR=%d: %5.2f" % ('mivia', db, acc))
             
-            np.savez('saved_params/gan/%02d.npz' % epoch, pred=predictions[-1][-1],
-                     truth=labels[-1][-1])
+            for (p, l) in disc_set:
+                np.savez('saved_params/gan/%02d.npz' % epoch, pred=p.numpy(),  truth=l.numpy())
+                break
