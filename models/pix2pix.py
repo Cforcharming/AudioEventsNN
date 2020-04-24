@@ -232,11 +232,13 @@ def gan_run(logger):
                     gen_loss = strategy.reduce(tf.distribute.ReduceOp.SUM, per_replica_gen_loss, axis=None)
                     dis_loss = strategy.reduce(tf.distribute.ReduceOp.SUM, per_replica_dis_loss, axis=None)
                     prediction = per_replica_prediction.values
+                    reduced_l = l30.valus
                     for p in prediction:
                         predictions.append(p)
-                    for lbs in l30:
+                    for lbs in reduced_l:
                         labels.append(lbs)
-                    
+                    print(len(predictions), len(labels))
+                    exit()
                     steps += 1
                     if steps % 100 == 0:
                         logger.info('100 steps trained.')
