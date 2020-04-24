@@ -233,8 +233,8 @@ def gan_run(logger):
             # saving (checkpoint) the model every 20 epochs
             if (epoch + 1) % 20 == 0:
                 checkpoint.save(file_prefix=checkpoint_prefix)
-                np.savez('saved_params/gan/%02d.npz' % epoch, pred=prediction.numpy(),  truth=c30.numpy())
             
+            np.savez('saved_params/gan/%02d.npz' % epoch, pred=prediction.numpy(),  truth=c30.numpy())
             logger.info('Time taken for epoch {} is {} sec\n gen loss: {}, dis loss: {}'.format(epoch + 1,
                                                                                                 time.time() - start,
                                                                                                 gen_loss, dis_loss))
