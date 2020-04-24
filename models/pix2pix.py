@@ -6,7 +6,7 @@ import time
 import os
 
 
-def gan_ran(logger):
+def gan_run(logger):
     gpus = tf.config.experimental.list_physical_devices('GPU')
     if gpus:
         for gpu in gpus:
@@ -101,7 +101,6 @@ def gan_ran(logger):
         
         loss_object = tf.keras.losses.BinaryCrossentropy(from_logits=True, reduction=tf.keras.losses.Reduction.NONE)
         
-        @tf.function
         def generator_loss(disc_generated_output, gen_output, tgt):
             gan_loss = tf.reduce_sum(
                 loss_object(tf.ones_like(disc_generated_output), disc_generated_output) * (1. / 128))
@@ -143,7 +142,6 @@ def gan_ran(logger):
             
             return tf.keras.Model(inputs=[inp, tar], outputs=last)
         
-        @tf.function
         def discriminator_loss(disc_real_output, disc_generated_output):
             real_loss = tf.reduce_sum(loss_object(tf.ones_like(disc_real_output), disc_real_output) * (1. / 128))
             
@@ -191,7 +189,7 @@ def gan_ran(logger):
                               loss=eval_model.loss_obj,
                               metrics=eval_model.metrics_obj)
         eval_model.v3.build(input_shape=[32, 128, 128, 1])
-        eval_model.v3.load_weights('saved_params/v3/m2/final_ckpt').expect_partial()
+        # eval_model.v3.load_weights('saved_params/v3/m2/final_ckpt').expect_partial()
         
         epochs = 30
         latest = tf.train.latest_checkpoint(checkpoint_prefix)
@@ -211,7 +209,6 @@ def gan_ran(logger):
             
             predictions = []
             labels = []
-            truth = None
             
             # Train
             gen_loss, dis_loss = 0, 0
@@ -223,13 +220,13 @@ def gan_ran(logger):
                 (c30, l30) = target
                 gen_loss, dis_loss, prediction = one_step(n5, c30)
                 
-                predictions.append(prediction)
-                labels.append(l30)
-                truth = c30
+                predictions = prediction
+                labels = l30
                 
                 steps += 1
-                if steps % 20 == 0:
-                    logger.info('20 steps trained.')
+                if steps % 10 == 0:
+                    logger.info('10 steps trained.')
+                    break
             
             # saving (checkpoint) the model every 5 epochs
             if (epoch + 1) % 5 == 0:
@@ -239,9 +236,11 @@ def gan_ran(logger):
                                                                                                 time.time() - start,
                                                                                                 gen_loss, dis_loss))
             
-            for db in range(5, 31, 5):
-                logger.info('Evaluating performance on %ddB OF SNR' % db)
-                loss, acc = eval_model.v3.evaluate(x=predictions, y=labels, verbose=1)
-                logger.info("4 groups accuracy on dataset %s for SNR=%d: %5.2f" % ('mivia', db, acc))
+            # preds = tf.data.Dataset.from_tensor_slices((predictions, labels))
+            # for db in range(5, 31, 5):
+            #     logger.info('Evaluating performance on %ddB OF SNR' % db)
+            #     loss, acc = eval_model.v3.evaluate(x=preds, verbose=1)
+            #     logger.info("4 groups accuracy on dataset %s for SNR=%d: %5.2f" % ('mivia', db, acc))
             
-            np.savez('saved_params/gan/%02d.npz' % epoch, pred=predictions[-1].numpy()[-1], truth=truth.numpy()[-1])
+            np.savez('saved_params/gan/%02d.npz' % epoch, pred=predictions.numpy()[-1],
+                     truth=labels.numpy()[-1])

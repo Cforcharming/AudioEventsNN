@@ -164,4 +164,4 @@ if __name__ == '__main__':
     # perform_train()
     # perform_evaluate()
     # v()
-    pix2pix.gan_ran(logger)
+    pix2pix.gan_run(logger)
