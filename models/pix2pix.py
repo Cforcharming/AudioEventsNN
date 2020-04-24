@@ -224,9 +224,8 @@ def gan_run(logger):
                 labels = l30
                 
                 steps += 1
-                if steps % 10 == 0:
-                    logger.info('10 steps trained.')
-                    break
+                if steps % 100 == 0:
+                    logger.info('100 steps trained.')
             
             # saving (checkpoint) the model every 5 epochs
             if (epoch + 1) % 5 == 0:
