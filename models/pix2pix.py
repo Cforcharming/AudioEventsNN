@@ -1,4 +1,4 @@
-from models import inception_v3
+# from models import inception_v3
 from datasets import mivia_3
 import tensorflow as tf
 import numpy as np
@@ -187,14 +187,14 @@ def gan_run(logger):
         train_noisy5, test_noisy5 = mivia_3.load_data(5)
         # train_noisy10, test_noisy10 = mivia_3.load_data(10)
         
-        eval_model = inception_v3.InceptionV3Model()
-        eval_model.v3.compile(optimizer=eval_model.optimizer_obj,
-                              loss=eval_model.loss_obj,
-                              metrics=eval_model.metrics_obj)
-        eval_model.v3.build(input_shape=[32, 128, 128, 1])
-        eval_model.v3.load_weights('saved_params/v3/m2/final_ckpt').expect_partial()
+        # eval_model = inception_v3.InceptionV3Model()
+        # eval_model.v3.compile(optimizer=eval_model.optimizer_obj,
+        #                       loss=eval_model.loss_obj,
+        #                       metrics=eval_model.metrics_obj)
+        # eval_model.v3.build(input_shape=[32, 128, 128, 1])
+        # eval_model.v3.load_weights('saved_params/v3/m2/final_ckpt').expect_partial()
         
-        epochs = 30
+        epochs = 100
         latest = tf.train.latest_checkpoint(checkpoint_prefix)
         if latest:
             checkpoint.restore(latest)
@@ -229,11 +229,11 @@ def gan_run(logger):
                 steps += 1
                 if steps % 100 == 0:
                     logger.info('100 steps trained.')
-                    logger.info(prediction)
             
-            # saving (checkpoint) the model every 5 epochs
-            if (epoch + 1) % 5 == 0:
+            # saving (checkpoint) the model every 20 epochs
+            if (epoch + 1) % 20 == 0:
                 checkpoint.save(file_prefix=checkpoint_prefix)
+                np.savez('saved_params/gan/%02d.npz' % epoch, pred=prediction.numpy(),  truth=c30.numpy())
             
             logger.info('Time taken for epoch {} is {} sec\n gen loss: {}, dis loss: {}'.format(epoch + 1,
                                                                                                 time.time() - start,
@@ -247,5 +247,3 @@ def gan_run(logger):
             #     logger.info("4 groups accuracy on dataset %s for SNR=%d: %5.2f" % ('mivia', db, acc))
             #
             # for (p, l) in disc_set:
-            #     np.savez('saved_params/gan/%02d.npz' % epoch, pred=p.numpy(),  truth=l.numpy())
-            #     break
