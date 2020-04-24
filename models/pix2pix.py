@@ -187,7 +187,9 @@ def gan_ran(logger):
         # train_noisy10, test_noisy10 = mivia_3.load_data(10)
         
         eval_model = inception_v3.InceptionV3Model()
-        eval_model.v3.compile()
+        eval_model.v3.compile(optimizer=eval_model.optimizer_obj,
+                              loss=eval_model.loss_obj,
+                              metrics=eval_model.metrics_obj)
         eval_model.v3.build(input_shape=[32, 128, 128, 1])
         eval_model.v3.load_weights('saved_params/v3/m2/final_ckpt').expect_partial()
         
