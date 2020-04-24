@@ -232,7 +232,8 @@ def gan_run(logger):
                     gen_loss = strategy.reduce(tf.distribute.ReduceOp.SUM, per_replica_gen_loss, axis=None)
                     dis_loss = strategy.reduce(tf.distribute.ReduceOp.SUM, per_replica_dis_loss, axis=None)
                     prediction = per_replica_prediction.values
-                    
+                    logger.info(prediction)
+                    exit()
                     predictions.append(prediction)
                     labels.append(l30)
                     
@@ -245,12 +246,11 @@ def gan_run(logger):
                     checkpoint.save(file_prefix=checkpoint_prefix)
                 
                 # np.savez('saved_params/gan/%02d.npz' % epoch, pred=prediction.numpy(),  truth=c30.numpy())
-                logger.info(prediction)
+                
                 logger.info('Time taken for epoch {} is {} sec\n gen loss: {}, dis loss: {}'.format(epoch + 1,
                                                                                                     time.time() - start,
                                                                                                     gen_loss,
                                                                                                     dis_loss))
-                exit()
                 
             for db in range(5, 31, 5):
                 logger.info('Evaluating performance on %ddB OF SNR' % db)
