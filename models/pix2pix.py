@@ -194,7 +194,7 @@ def gan_run(logger):
         eval_model.v3.build(input_shape=[32, 128, 128, 1])
         eval_model.v3.load_weights('saved_params/v3/m2/final_ckpt').expect_partial()
         
-        epochs = 99
+        epochs = 200
         latest = tf.train.latest_checkpoint(checkpoint_dir)
         if latest:
             checkpoint.restore(latest)
@@ -221,7 +221,6 @@ def gan_run(logger):
                 
                 # Train
                 gen_loss, dis_loss = 0, 0
-                # steps = 0
                 
                 for (input_image, target) in zip(strategy.experimental_distribute_dataset(train_noisy5),
                                                  strategy.experimental_distribute_dataset(train_clear)):
@@ -244,17 +243,8 @@ def gan_run(logger):
                         for g in gt:
                             truths.append(g)
                             break
-                    #
-                    # steps += 1
-                    # if steps % 100 == 0:
-                    #     logger.info('100 steps trained.')
-                    #     break
                 
-                # saving (checkpoint) the model every 20 epochs
-                if (epoch + 1) % 20 == 0:
-                    checkpoint.save(file_prefix=checkpoint_prefix)
-                
-                np.savez('saved_params/gan/%02d.npz' % epoch,
+                np.savez('saved_params/gan/%03d.npz' % epoch,
                          pred=predictions[-1].numpy(),
                          truth=truths[-1].numpy(),
                          label=labels[-1].numpy())
@@ -264,11 +254,14 @@ def gan_run(logger):
                                                                                                     gen_loss,
                                                                                                     dis_loss))
                 
-                for db in range(5, 31, 5):
-                    te, tr = mivia_3.load_data(db)
-                    logger.info('Evaluating performance on %ddB OF SNR' % db)
-                    loss, acc = eval_model.v3.evaluate(x=tr.map(map_func=map_fun), verbose=1)
-                    logger.info("4 groups accuracy on dataset %s for SNR=%d: %5.2f" % ('mivia', db, acc))
+                # saving (checkpoint) the model every 20 epochs
+                if (epoch + 1) % 20 == 0:
+                    checkpoint.save(file_prefix=checkpoint_prefix)
+                    for db in range(5, 31, 5):
+                        te, tr = mivia_3.load_data(db)
+                        logger.info('Evaluating performance on %ddB OF SNR' % db)
+                        loss, acc = eval_model.v3.evaluate(x=tr.map(map_func=map_fun), verbose=1)
+                        logger.info("4 groups accuracy on dataset %s for SNR=%d: %5.2f" % ('mivia', db, acc))
         
         except KeyboardInterrupt:
             pass
