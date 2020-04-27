@@ -202,7 +202,8 @@ def gan_run(logger):
         
         @tf.function
         def map_fun(data, label):
-            data = generator(data)
+            per_replica_data = strategy.experimental_run_v2(generator, args=data)
+            data = per_replica_data.values
             return data, label
         
         @tf.function
@@ -210,7 +211,7 @@ def gan_run(logger):
             gl, dl, pred = strategy.experimental_run_v2(train_step, args=(n, c))
             return gl, dl, pred
         try:
-            for epoch in range(epochs):
+            for epoch in range(20, epochs):
                 start = time.time()
                 
                 logger.info("Epoch: %d" % epoch)
